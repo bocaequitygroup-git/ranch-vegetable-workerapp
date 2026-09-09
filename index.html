@@ -852,6 +852,17 @@
     });
   }
 
+  // Used only as a defensive fallback in appScanQR (see 2026-09-08 comment
+  // there) when a scanned bed comes back with a raw Crop_ID but no
+  // cropName. Returns '' rather than undefined if the picklist hasn't
+  // loaded yet or the code isn't in it -- callers already chain further
+  // fallbacks after this one.
+  function cropNameFromPicklist_(cropId) {
+    if (!cropId || !state.cropPicklist) return '';
+    let hit = state.cropPicklist.find(function(c) { return c.cropId === cropId; });
+    return hit ? hit.cropName : '';
+  }
+
   function loadTaxonomy() {
     apiCall('get-taxonomy', {}, function(res) {
       if (res && res.success && res.taxonomy) {
@@ -1329,7 +1340,16 @@
 
         document.getElementById('lbl-bed-id').textContent = state.bedId;
         document.getElementById('lbl-block').textContent = res.bed.block || '-';
-        document.getElementById('lbl-crop').textContent = res.bed.cropName || state.crop;
+        // 2026-09-08 (Rules-to-Events engine, verification pass): added the
+        // cropNameFromPicklist_ fallback between res.bed.cropName and the
+        // raw code. handleScanQr_ should always attach cropName -- but a
+        // cohort minted via PCB's new dispatch-planting-event path is one
+        // more write path than existed before, so this is a defensive
+        // second lookup (against the crop picklist already loaded by
+        // loadCropPicklist()) rather than a trust that every deployment's
+        // handleScanQr_ has caught up. Never falls back to a raw code like
+        // "SUK" while ANY crop-name source has the answer.
+        document.getElementById('lbl-crop').textContent = res.bed.cropName || cropNameFromPicklist_(state.crop) || state.crop;
         document.getElementById('lbl-bed-state').textContent = res.bed.bedState || '-';
 
         // Irrigation zone -- shown inline next to Block; hidden entirely for
