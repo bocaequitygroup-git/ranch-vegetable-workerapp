@@ -1,1769 +1,562 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background: #f4f6f8; color: #333; }
-    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 480px; margin: 0 auto 16px; }
-    .hidden { display: none !important; }
-    .form-group { margin-bottom: 16px; }
-    label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
-    input, select, button { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-    button { background: #2e7d32; color: #fff; font-weight: bold; border: none; cursor: pointer; margin-top: 8px; }
-    button:hover { background: #1b5e20; }
-    button.btn-danger { background: #c62828; }
-    button.btn-secondary { background: #666; }
-    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; color: #fff; background: #666; }
-    .badge-active { background: #2e7d32; }
-    .badge-danger { background: #c62828; }
-    .badge-critical { background: #6a1b9a; }
-    .badge-low { background: #558b2f; }
-    .badge-medium { background: #ef6c00; }
-    .meta-box { background: #e8f5e9; padding: 14px; border-radius: 8px; margin-bottom: 16px; border-left: 5px solid #2e7d32; }
-    .meta-box p { margin: 6px 0; font-size: 15px; }
-    .meta-headline { font-size: 18px; font-weight: bold; color: #1b5e20; }
-    .meta-sub { font-size: 14px; font-weight: normal; color: #555; }
-    .meta-crop { font-weight: bold; color: #2e7d32; }
-    .code-chip { font-family: monospace; font-size: 12px; color: #666; background: #dcedc8; padding: 2px 6px; border-radius: 4px; }
-    .bed-result { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; margin-top: 8px; cursor: pointer; background: #fafafa; }
-    .bed-result:hover { background: #e8f5e9; border-color: #2e7d32; }
-    .bed-result .bed-id { font-weight: bold; font-size: 15px; }
-    .bed-result .bed-meta { font-size: 13px; color: #666; margin-top: 2px; }
-    .bed-empty-msg { font-size: 13px; color: #888; padding: 8px 0; }
-    #bed-search-results { max-height: 320px; overflow-y: auto; }
-    .session-row { border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 10px; background: #fafafa; }
-    .session-row-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .session-row .sr-bed { font-weight: bold; font-size: 15px; }
-    .session-row .sr-meta { font-size: 13px; color: #666; margin-bottom: 8px; }
-    .session-row .sr-reassigned { font-size: 12px; color: #ef6c00; font-weight: bold; margin-bottom: 8px; }
-    .session-row .sr-actions { display: flex; gap: 8px; }
-    .session-row .sr-actions button { width: auto; flex: 1; padding: 8px; font-size: 13px; margin-top: 0; }
-    .badge-paused { background: #ef6c00; }
-    .badge-planned { background: #546e7a; }
-    .pause-group { margin-top: 8px; }
-    .pause-group > label { font-weight: bold; margin-bottom: 6px; font-size: 14px; }
-    .pause-group-buttons { display: flex; gap: 8px; }
-    .pause-group-buttons button { width: auto; flex: 1; padding: 10px 6px; font-size: 12px; margin-top: 0; }
-    .empty-state { text-align: center; color: #888; padding: 24px 8px; font-size: 14px; }
-    .bed-history-toggle { background: none; border: none; color: #2e7d32; font-weight: bold; font-size: 14px; padding: 6px 0; text-align: left; width: auto; cursor: pointer; }
-    .bed-history-body { margin-top: 6px; }
-    .bh-group-label { font-size: 12px; font-weight: bold; color: #666; text-transform: uppercase; letter-spacing: 0.02em; margin: 12px 0 6px; }
-    .bh-group-label:first-child { margin-top: 0; }
-    .bh-row { border: 1px solid #ddd; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; background: #fafafa; font-size: 13px; }
-    .bh-row-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .bh-row-top .bh-title { font-weight: bold; }
-    .bh-row .bh-meta { color: #666; }
-    .bh-row.bh-exception { background: #fdecea; border-color: #f3c2be; }
-    .field-actions-label { font-size: 12px; font-weight: bold; color: #666; text-transform: uppercase; letter-spacing: 0.02em; margin: 4px 0 8px; }
-    .field-actions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    .field-actions-grid button { width: auto; padding: 10px 4px; font-size: 12px; margin-top: 0; background: #2e7d32; line-height: 1.3; }
-    .field-actions-grid button:hover { background: #1b5e20; }
-    .field-actions-grid button:disabled { background: #b0bec5; cursor: default; }
-    #quick-launch-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
-    #quick-launch-overlay.hidden { display: none !important; }
-    .modal-box { background: #fff; border-radius: 10px; padding: 20px; max-width: 400px; width: 100%; }
-    .modal-box h3 { margin: 0 0 8px; font-size: 17px; }
-    .modal-box p { margin: 4px 0; font-size: 14px; color: #555; }
-    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
-    .modal-actions button { width: auto; flex: 1; margin-top: 0; }
-    #app-header { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between;
-      background: #263238; color: #fff; padding: 10px 16px; margin-bottom: 12px; font-size: 13px; z-index: 10; }
-    #app-header.hidden { display: none !important; }
-    .conn-status { display: flex; align-items: center; gap: 6px; }
-    .conn-dot { width: 9px; height: 9px; border-radius: 50%; background: #888; flex-shrink: 0; }
-    .conn-dot.online { background: #66bb6a; }
-    .conn-dot.checking { background: #ffb300; }
-    .conn-dot.offline { background: #e53935; }
-    #btn-logout { width: auto; padding: 6px 12px; margin: 0; font-size: 12px; background: #455a64; }
-    #btn-logout:hover { background: #37474f; }
-    .header-user { font-weight: bold; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WorkerApp — Ngapori Ranch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --forest:#1F3A2E; --forest-dark:#14261D;
+  --sand:#F5F1E6; --paper:#FFFFFF; --ink:#1B1B18; --ink-soft:#5B5A52;
+  --line:#DCD5C4;
+  --ok:#2E7D32; --warn:#C77700; --danger:#B3261E; --irrigation:#C9622A;
+  --accent:#1F3A2E;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --sand:#15181A; --paper:#1E2320; --ink:#EDEAE0; --ink-soft:#A9A79A; --line:#33372F;
+  }
+}
+:root[data-theme="dark"]{
+  --sand:#15181A; --paper:#1E2320; --ink:#EDEAE0; --ink-soft:#A9A79A; --line:#33372F;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--sand); color:var(--ink);
+  font-family:'Archivo',system-ui,-apple-system,Segoe UI,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+#app{
+  max-width:480px; margin:0 auto; min-height:100vh;
+  display:flex; flex-direction:column; background:var(--sand);
+}
+.topbar{
+  position:sticky; top:0; z-index:10; background:var(--forest); color:#fff;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 18px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.topbar .brand{font-weight:800; font-size:15px; letter-spacing:.02em;}
+.topbar .sub{font-size:11px; color:#C9D6CD; margin-top:1px;}
+.topbar button{background:none;border:none;color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 10px;}
+.content{flex:1; padding:18px 18px 90px;}
+h1{font-size:22px; font-weight:800; margin:0 0 4px; letter-spacing:-.01em;}
+h2{font-size:15px; font-weight:700; margin:0 0 10px;}
+p.lead{color:var(--ink-soft); font-size:14px; margin:0 0 20px; line-height:1.5;}
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+input,select,textarea{
+  width:100%; padding:13px 14px; border:1.5px solid var(--line); border-radius:10px;
+  font-family:inherit; font-size:16px; background:var(--paper); color:var(--ink);
+}
+textarea{resize:vertical; min-height:70px;}
+.btn{
+  display:block; width:100%; text-align:center; padding:15px; border-radius:12px;
+  font-family:inherit; font-size:15px; font-weight:700; border:none; cursor:pointer;
+  margin-bottom:10px;
+}
+.btn-primary{background:var(--forest); color:#fff;}
+.btn-primary:active{background:var(--forest-dark);}
+.btn-outline{background:transparent; color:var(--forest); border:1.5px solid var(--forest);}
+.btn-danger{background:var(--danger); color:#fff;}
+.btn-warn{background:var(--warn); color:#fff;}
+.btn-ghost{background:transparent; color:var(--ink-soft); font-weight:600;}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+.card{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px;}
+.card .row{display:flex; justify-content:space-between; font-size:13px; padding:5px 0;}
+.card .row span:first-child{color:var(--ink-soft);}
+.card .row span:last-child{font-weight:700; text-align:right;}
+.chip{display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.02em;}
+.chip-ok{background:#E4F1E5; color:var(--ok);}
+.chip-warn{background:#FBEBD6; color:var(--warn);}
+.chip-danger{background:#F7DEDB; color:var(--danger);}
+.chip-irr{background:#FBE4D4; color:var(--irrigation);}
+:root[data-theme="dark"] .chip-ok,:root:not([data-theme="light"]) .chip-ok{background:#1E3320;}
+:root[data-theme="dark"] .chip-warn,:root:not([data-theme="light"]) .chip-warn{background:#3A2A10;}
+:root[data-theme="dark"] .chip-danger,:root:not([data-theme="light"]) .chip-danger{background:#3A1D1B;}
+:root[data-theme="dark"] .chip-irr,:root:not([data-theme="light"]) .chip-irr{background:#3A2515;}
+.activity-btn{
+  display:flex; align-items:center; justify-content:space-between; width:100%;
+  padding:16px; margin-bottom:10px; border-radius:12px; border:1.5px solid var(--line);
+  background:var(--paper); font-family:inherit; font-size:15px; font-weight:700; color:var(--ink);
+  cursor:pointer; text-align:left;
+}
+.activity-btn:active{border-color:var(--forest);}
+.activity-btn .tag{font-size:11px; font-weight:600; color:var(--ink-soft);}
+.timer{
+  font-size:52px; font-weight:800; text-align:center; letter-spacing:-.02em;
+  padding:24px 0 10px; font-variant-numeric:tabular-nums;
+}
+.timer-status{text-align:center; font-size:13px; font-weight:700; color:var(--ink-soft); margin-bottom:18px; text-transform:none;}
+.quickcodes{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px;}
+.quickcode{padding:8px 12px; border-radius:9px; border:1.5px dashed var(--line); background:transparent; font-family:inherit; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer;}
+.error{background:#F7DEDB; color:var(--danger); padding:11px 14px; border-radius:10px; font-size:13px; font-weight:600; margin-bottom:14px;}
+.toast{
+  position:fixed; left:50%; bottom:calc(30px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%);
+  background:var(--ink); color:var(--sand); padding:12px 20px; border-radius:999px; font-size:13.5px; font-weight:600;
+  z-index:100; box-shadow:0 8px 24px rgba(0,0,0,.25); max-width:88%; text-align:center;
+}
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:50; display:flex; align-items:flex-end;}
+.sheet{
+  background:var(--sand); width:100%; max-width:480px; margin:0 auto; border-radius:20px 20px 0 0;
+  padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px)); max-height:88vh; overflow-y:auto;
+}
+.sheet-handle{width:36px; height:4px; background:var(--line); border-radius:99px; margin:0 auto 16px;}
+.segbtns{display:flex; gap:8px; margin-bottom:14px;}
+.segbtns button{flex:1; padding:11px; border-radius:9px; border:1.5px solid var(--line); background:var(--paper); font-family:inherit; font-weight:700; font-size:13px; color:var(--ink); cursor:pointer;}
+.segbtns button.active{background:var(--forest); color:#fff; border-color:var(--forest);}
+.navbar{
+  position:fixed; bottom:0; left:0; right:0; z-index:10;
+  background:var(--paper); border-top:1px solid var(--line);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+  display:flex; justify-content:space-around; max-width:480px; margin:0 auto;
+}
+.navitem{background:none; border:none; font-family:inherit; color:var(--ink-soft); font-size:11px; font-weight:700; text-align:center; cursor:pointer; padding:4px 8px;}
+.navitem .dot{width:8px;height:8px;border-radius:50%; margin:0 auto 4px; background:var(--line);}
+.navitem.active{color:var(--forest);}
+.navitem.active .dot{background:var(--forest);}
+.loglist{display:flex; flex-direction:column; gap:8px;}
+.logrow{background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12.5px;}
+.logrow .t1{font-weight:700; margin-bottom:2px;}
+.logrow .t2{color:var(--ink-soft);}
+.empty{text-align:center; color:var(--ink-soft); font-size:13.5px; padding:40px 10px;}
+.kpad{display:none;}
+.linkbtn{background:none;border:none;color:var(--forest);font-family:inherit;font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;padding:0;}
+</style>
 </head>
 <body>
-
-  <div id="app-header" class="hidden">
-    <div class="conn-status">
-      <span id="conn-dot" class="conn-dot"></span>
-      <span id="conn-text">Not connected</span>
-    </div>
-    <span id="header-user-name" class="header-user"></span>
-    <button id="btn-logout" onclick="appLogout()">Log Out</button>
-  </div>
-
-  <!-- VIEW 1: AUTHENTICATION -->
-  <div id="view-login" class="card">
-    <h2>Worker Login</h2>
-    <div class="form-group">
-      <label for="login-worker-id">User ID</label>
-      <input type="text" id="login-worker-id" placeholder="e.g. USR-WORKER1" autocapitalize="off" autocorrect="off" spellcheck="false">
-    </div>
-    <div class="form-group">
-      <label for="login-pin">PIN</label>
-      <input type="password" id="login-pin" placeholder="****">
-    </div>
-    <button onclick="appLogin()">Sign In</button>
-  </div>
-
-  <!-- VIEW 1.5: MY ACTIVE SESSIONS (post-login hub -- supports multiple parallel tasks) -->
-  <div id="view-my-sessions" class="card hidden">
-    <div style="display:flex; align-items:center; justify-content:space-between;">
-      <h2 style="margin:0;">My Active Sessions</h2>
-      <button style="width:auto; padding:6px 12px; font-size:12px; margin:0;" onclick="loadMySessions()">Refresh</button>
-    </div>
-    <div id="my-sessions-subtitle" style="font-size:13px; color:#666; margin-bottom:10px;"></div>
-    <div id="my-sessions-list"></div>
-    <button onclick="switchView('view-scan')">+ Start New Task</button>
-    <button class="btn-secondary" onclick="loadMyHistory()">View Completed History</button>
-  </div>
-
-  <!-- VIEW 1.6: MY COMPLETED HISTORY (read-only feed of this worker's own FIELD_ACTIVITY_LOG rows) -->
-  <div id="view-my-history" class="card hidden">
-    <div style="display:flex; align-items:center; justify-content:space-between;">
-      <h2 style="margin:0;">Completed History</h2>
-      <button style="width:auto; padding:6px 12px; font-size:12px; margin:0;" onclick="loadMyHistory()">Refresh</button>
-    </div>
-    <div id="my-history-list"></div>
-    <button class="btn-secondary" style="margin-top:16px;" onclick="loadMySessions()">Back to My Sessions</button>
-  </div>
-
-  <!-- VIEW 2: QR / BED SCAN -->
-  <div id="view-scan" class="card hidden">
-    <h2>Scan Location</h2>
-    <div class="form-group">
-      <label for="scan-qr-input">Scan or Enter QR Code</label>
-      <input type="text" id="scan-qr-input" placeholder="e.g. BED:B1-01" onkeypress="handleScanKeyPress(event)">
-    </div>
-    <button onclick="appScanQR()">Process Scan</button>
-
-    <div class="form-group" style="margin-top:20px;">
-      <label for="bed-search-input">Or Search Beds (no camera needed)</label>
-      <input type="text" id="bed-search-input" placeholder="Search by bed, block, or crop..." oninput="renderBedSearchResults()" onfocus="renderBedSearchResults()">
-    </div>
-    <div id="bed-search-results"></div>
-    <button class="btn-secondary" style="margin-top:16px;" onclick="loadMySessions()">Back to My Sessions</button>
-  </div>
-
-  <!-- VIEW 3: CONFIRMATION & TASK SELECTION -->
-  <div id="view-select-task" class="card hidden">
-    <h2>Confirm Assignment</h2>
-
-    <div class="meta-box">
-      <p class="meta-headline">📍 Bed <span id="lbl-bed-id">-</span> <span class="meta-sub">(Block <span id="lbl-block">-</span><span id="row-zone">&nbsp;· Zone <span id="lbl-zone">-</span></span>)</span></p>
-      <p>🌱 <strong>Crop:</strong> <span><span class="meta-crop" id="lbl-crop">-</span> <span class="code-chip" id="lbl-crop-code"></span></span></p>
-      <p>🏷️ <strong>Cohort:</strong> <span class="code-chip" id="lbl-cohort-id">-</span></p>
-      <p id="row-variety-stage">🧬 <strong>Variety:</strong> <span id="lbl-variety-stage">-</span></p>
-      <p id="row-stage-day">📈 <strong>Stage:</strong> <span id="lbl-stage-day">-</span></p>
-      <p id="row-planted">📅 <strong>Planted:</strong> <span id="lbl-planted">-</span></p>
-      <p id="row-harvest-est">🌾 <strong>Harvest:</strong> <span id="lbl-harvest-est">-</span></p>
-      <p id="row-bed-target">🎯 <strong>Bed Target:</strong> <span id="lbl-bed-target">-</span></p>
-      <p>📋 <strong>Field Status:</strong> <span id="lbl-bed-state">-</span></p>
-    </div>
-
-    <button type="button" class="bed-history-toggle" id="bed-history-toggle" onclick="toggleBedHistory()">▸ Bed History</button>
-    <div id="bed-history-body" class="bed-history-body hidden"></div>
-
-    <div class="field-actions-label">Field Actions</div>
-    <div class="field-actions-grid">
-      <button type="button" onclick="quickLaunch('water')">💧<br>Log Water Pass</button>
-      <button type="button" onclick="quickLaunch('fertilizer')">🧪<br>Log Fertilizer</button>
-      <button type="button" onclick="quickLaunch('weeding')">🌿<br>Log Weeding</button>
-    </div>
-
-    <div class="form-group">
-      <label for="activity-picker-container">Or Choose Any Activity</label>
-      <div id="activity-picker-container"></div>
-      <div id="planting-gate-warning" class="hidden" style="margin-top:8px; padding:10px; border-radius:6px; background:#3a2a12; color:#f0c674; font-size:0.92em;"></div>
-      <!-- Crop picker (2026-09-05, worker pending-cohort flow): shown instead
-           of a hard block when a planting activity is selected on a bed with
-           no active cohort. Picking a crop here and tapping Start Task mints
-           a fresh, unverified cohort server-side (createCohort_ via
-           resolveSessionCohortAndCrop_'s newPlantingCropId path, Database.gs)
-           -- a manager still has to verify the resulting activity (Verify &
-           Lock DOB) before the bed/cohort formally advance out of Rest/Prep. -->
-      <div id="planting-gate-crop-picker" class="hidden" style="margin-top:8px; padding:10px; border-radius:6px; background:#1a2a1e; font-size:0.92em;">
-        <label for="planting-gate-crop-select" style="display:block; margin-bottom:6px;">🌱 What crop are you planting?</label>
-        <select id="planting-gate-crop-select" onchange="onPlantingGateCropChange()"></select>
-        <p style="margin:6px 0 0; opacity:0.8;">A manager will verify this planting once it's checked -- you can start now.</p>
-      </div>
-    </div>
-
-    <div class="form-group" id="harvest-plan-toggle-group" style="display:none;">
-      <label style="display:flex; align-items:center; gap:8px; font-weight:normal;">
-        <input type="checkbox" id="harvest-plan-check" style="width:auto;" onchange="toggleHarvestPlanFields()">
-        Schedule this as a planned harvest (optional)
-      </label>
-      <div id="harvest-plan-fields" class="hidden" style="margin-top:10px;">
-        <label for="harvest-plan-start">Planned Start</label>
-        <input type="datetime-local" id="harvest-plan-start">
-        <label for="harvest-plan-end" style="margin-top:8px;">Planned End</label>
-        <input type="datetime-local" id="harvest-plan-end">
-      </div>
-    </div>
-
-    <button id="btn-use-bed" onclick="appStartSession()">▶ Start Task</button>
-    <button class="btn-secondary" onclick="switchView('view-scan')">Cancel / Rescan</button>
-    <button class="btn-secondary" onclick="loadMySessions()">Back to My Sessions</button>
-  </div>
-
-  <!-- VIEW 4: ACTIVE TIMER EXECUTION -->
-  <div id="view-execution" class="card hidden">
-    <h2>Active Session</h2>
-
-    <div class="meta-box">
-      <p><strong>Status:</strong> <span id="lbl-status" class="badge badge-active">ACTIVE</span></p>
-      <p><strong>Bed:</strong> <span id="exec-bed">-</span></p>
-      <p><strong>Task:</strong> <span id="exec-task">-</span></p>
-      <p><strong>Started:</strong> <span id="exec-start">-</span></p>
-    </div>
-
-    <div class="form-group hidden" id="harvest-tote-section">
-      <h3 style="margin:16px 0 8px; font-size:15px;">Log Harvest Tote</h3>
-      <div style="display:flex; gap:8px;">
-        <div style="flex:1;"><label for="tote-gross">Gross (lbs)</label><input type="number" id="tote-gross" step="0.1" min="0"></div>
-        <div style="flex:1;"><label for="tote-tare">Tare (lbs)</label><input type="number" id="tote-tare" step="0.1" min="0" value="0"></div>
-      </div>
-      <div style="display:flex; gap:8px; margin-top:8px;">
-        <div style="flex:1;"><label for="tote-crates">Crate/Tote Count</label><input type="number" id="tote-crates" step="1" min="1" value="1"></div>
-        <div style="flex:1;">
-          <label for="tote-grade">Quality Grade</label>
-          <select id="tote-grade">
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-          </select>
-        </div>
-      </div>
-      <button class="btn-secondary" onclick="appLogHarvestTote()" style="margin-top:10px;">Log Tote</button>
-      <div id="tote-log-list" style="margin-top:10px;"></div>
-      <div id="tote-log-total" style="font-size:13px; color:#666; margin-top:6px;"></div>
-    </div>
-
-    <div class="form-group hidden" id="scout-finding-section">
-      <h3 style="margin:16px 0 8px; font-size:15px;">Scouting</h3>
-      <button class="btn-secondary" onclick="appOpenScoutFinding()">+ Log Scout Finding</button>
-      <div id="scout-finding-log-list" style="margin-top:10px;"></div>
-      <div id="scout-finding-log-total" style="font-size:13px; color:#666; margin-top:6px;"></div>
-    </div>
-
-    <button class="btn-danger" onclick="appReportExceptionPrompt()">Report Exception / Issue</button>
-    <button onclick="appCompleteSession()">Complete Activity</button>
-
-    <div class="pause-group">
-      <label>Pause &amp; Back to My Sessions</label>
-      <div class="pause-group-buttons">
-        <button class="btn-secondary" onclick="appPauseAndExit('BREAK')">Take Break</button>
-        <button class="btn-secondary" onclick="appPauseAndExit('LUNCH')">Take Lunch</button>
-        <button class="btn-secondary" onclick="appPauseAndExit('END_OF_DAY')">End of Day</button>
-      </div>
-    </div>
-
-    <button class="btn-secondary" onclick="loadMySessions()">Back to My Sessions</button>
-  </div>
-
-  <!-- VIEW 5: EXCEPTION LOGGING -->
-  <div id="view-exception" class="card hidden">
-    <h2>Report Field Issue</h2>
-    <div class="form-group">
-      <label for="exc-type">Issue Type</label>
-      <select id="exc-type">
-        <option value="PEST">Pest Outbreak</option>
-        <option value="DISEASE">Disease Symptoms</option>
-        <option value="IRRIGATION">Irrigation Failure</option>
-        <option value="EQUIPMENT">Equipment Breakdown</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="exc-severity">Severity Level</label>
-      <select id="exc-severity">
-        <option value="LOW">Low</option>
-        <option value="MEDIUM">Medium</option>
-        <option value="HIGH">High / Critical</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="exc-notes">Notes / Observations</label>
-      <input type="text" id="exc-notes" placeholder="Describe what you see...">
-    </div>
-    <div class="form-group">
-      <label for="exc-photo">Attach Photo (optional)</label>
-      <input type="file" id="exc-photo" accept="image/*" capture="environment" onchange="handleExceptionPhotoSelect(event)">
-      <div id="exc-photo-preview" style="margin-top:8px;"></div>
-    </div>
-    <button class="btn-danger" onclick="appSubmitException()">Submit Alert</button>
-    <button class="btn-secondary" onclick="switchView('view-execution')">Return to Task</button>
-  </div>
-
-  <!-- VIEW 6: SCOUT FINDING ENTRY -->
-  <div id="view-scout-finding" class="card hidden">
-    <h2>Log Scout Finding</h2>
-    <div class="meta-box">
-      <p class="meta-headline">📍 Bed <span id="scout-lbl-bed">-</span></p>
-      <p class="meta-sub">Pass: <span id="scout-lbl-activity">-</span></p>
-    </div>
-
-    <div class="form-group">
-      <label for="scout-domain">What kind of finding?</label>
-      <select id="scout-domain"></select>
-    </div>
-    <div class="form-group">
-      <label for="scout-symptom">What did you see?</label>
-      <input type="text" id="scout-symptom" placeholder="e.g. Aphids on undersides of leaves">
-    </div>
-    <div class="form-group">
-      <label for="scout-severity">Severity</label>
-      <select id="scout-severity"></select>
-    </div>
-    <div class="form-group">
-      <label for="scout-location">Location on Bed (optional)</label>
-      <input type="text" id="scout-location" placeholder="e.g. NW corner, row 3">
-    </div>
-    <div class="form-group">
-      <label for="scout-notes">Notes (optional)</label>
-      <input type="text" id="scout-notes" placeholder="Additional detail...">
-    </div>
-    <div class="form-group">
-      <label style="display:flex; align-items:center; gap:8px; font-weight:normal;">
-        <input type="checkbox" id="scout-requires-action" style="width:auto;">
-        Flag for manager attention (opens an exception)
-      </label>
-    </div>
-    <div class="form-group">
-      <label for="scout-photo">Attach Photo (optional)</label>
-      <input type="file" id="scout-photo" accept="image/*" capture="environment" onchange="handleScoutPhotoSelect(event)">
-      <div id="scout-photo-preview" style="margin-top:8px;"></div>
-    </div>
-
-    <button onclick="appSubmitScoutFinding()">Submit Finding</button>
-
-    <div id="scout-recap-wrap" class="hidden" style="margin-top:16px;">
-      <label style="margin-bottom:6px;">Logged This Pass</label>
-      <div id="scout-finding-recap-list"></div>
-    </div>
-
-    <button class="btn-secondary" style="margin-top:16px;" onclick="switchView('view-execution')">Done &mdash; Back to Session</button>
-  </div>
-
-  <!-- QUICK-LAUNCH CONFIRM MODAL -- shown by quickLaunch() before handing off to the
-       existing appStartSession() pipeline; never writes anything itself. -->
-  <div id="quick-launch-overlay" class="hidden">
-    <div class="modal-box">
-      <h3 id="ql-modal-title">Start Task?</h3>
-      <p id="ql-modal-bed">-</p>
-      <p id="ql-modal-cohort">-</p>
-      <div class="modal-actions">
-        <button type="button" class="btn-secondary" onclick="cancelQuickLaunch()">Cancel</button>
-        <button type="button" onclick="confirmQuickLaunch()">▶ Start Timer</button>
-      </div>
-    </div>
-  </div>
+<div id="app"></div>
 
 <script>
-  // Paste your Apps Script Web App deployment URL below
-  // Must be deployed as: "Execute as: Me" and "Who has access: Anyone"
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwUFXoHDFSUArQCIqkh2De8-fwPfWSG9LRvtagJPzmJdFaBx_95av5V57NzYs1J1IZLnA/exec';
+/* ---------- mock reference data (stands in for CROP_ZONING_REFERENCE / BED_MASTER / USERS) ---------- */
+const USERS = [
+  {id:'USR-WORKER1', pin:'1234', name:'Jo Lindqvist'}
+];
+const BEDS = {
+  'B1-17': {block:'Block 1', zone:'Zone A', cohort:'MCH-C01', crop:'Mesclun Mix', activities:['IrrigationCheck','Weeding','Harvest','Scouting']},
+  'B2-04': {block:'Block 2', zone:'Zone B', cohort:'LET-C03', crop:'Butterhead Lettuce', activities:['Transplant','Scouting','IrrigationCheck']},
+  'B3-11': {block:'Block 3', zone:'Zone C', cohort:'RAD-C02', crop:'Radish', activities:['DirectSeed','BedPrep','IrrigationCheck','PestControl']},
+  'B4-09': {block:'Block 4', zone:'Zone A', cohort:'KAL-C01', crop:'Curly Kale', activities:['Harvest','Fertilizing','DiseaseControl','Scouting']}
+};
+const IRRIGATION_FAULTS = ['LEAK','BLOWOUT','CLOG','DRY_SPOT','LOW_PRESSURE','HIGH_PRESSURE'];
+const SCOUT_DOMAINS = ['PlantCondition','PestPressure','DiseasePressure','SoilWater','WeedCompetition'];
+const SEVERITIES = ['LOW','MEDIUM','HIGH','CRITICAL'];
+const HARVEST_UNITS = ['lb','kg','each','bunches'];
 
-  // Every id in this list MUST have a matching <div> in the markup above,
-  // or switchView() throws on document.getElementById(v).classList and the
-  // destination view never gets un-hidden. This was the root cause of
-  // buttons appearing to "do nothing" -- 'view-manager' was in this list
-  // with no corresponding element, so every switchView() call silently
-  // threw before reaching the line that shows the new view.
-  const VIEW_IDS = ['view-login', 'view-my-sessions', 'view-my-history', 'view-scan', 'view-select-task', 'view-execution', 'view-exception', 'view-scout-finding'];
-
-  // Must match SCOUTING_ACTIVITY_TYPES_ in ActivityTaxonomy.gs -- the
-  // activity types a scouting finding may legally be logged against. Kept
-  // as its own small constant here (rather than derived from
-  // state.taxonomyGroups) so the "Log Scout Finding" section can show/hide
-  // correctly even before get-taxonomy's response lands.
-  const SCOUTING_ACTIVITY_TYPES = ['PestScouting', 'DiseaseScouting', 'CropInspection', 'MaturityInspection'];
-
-  var SCOUT_SEVERITY_LABELS = { LOW: 'Low', MEDIUM: 'Medium', HIGH: 'High', CRITICAL: 'Critical' };
-  function scoutSeverityLabel(sev) { return SCOUT_SEVERITY_LABELS[sev] || sev; }
-  function scoutSeverityBadgeClass(sev) {
-    return { LOW: 'badge-low', MEDIUM: 'badge-medium', HIGH: 'badge-danger', CRITICAL: 'badge-critical' }[sev] || '';
-  }
-
-  let state = {
-    workerId: '',
-    workerName: '',
-    bedId: '',
-    cohortId: '',
-    crop: '',
-    selectedActivity: '',
-    sessionId: '',
-    taxonomyGroups: {},
-    taxonomyLabels: {},
-    scoutDomains: [], // e.g. ['PlantCondition','PestPressure',...] -- from get-taxonomy (ActivityTaxonomy.gs SCOUT_DOMAINS)
-    scoutDomainLabels: {},
-    scoutSeverities: [], // ['LOW','MEDIUM','HIGH','CRITICAL']
-    allBeds: [],
-    openSessions: [], // all of this worker's ACTIVE/PAUSED sessions -- multi-tasking means there can be more than one
-    myHistory: [], // this worker's own completed-activity feed from FIELD_ACTIVITY_LOG, via get-activity-history
-    sessionTotes: [], // totes logged via log-harvest-tote during THIS execution-view visit (client-side only -- see handleLogHarvestTote_ in Code.gs for why)
-    sessionFindings: [], // scout findings logged via log-scout-finding during THIS execution-view visit (client-side recap only -- SCOUT_FINDING rows are already durable server-side)
-    exceptionPhotoBase64: '', // base64 payload (no data: prefix) of a photo attached to the current exception report, if any
-    exceptionPhotoMime: '',
-    findingPhotoBase64: '', // same pattern as exceptionPhotoBase64, but for the scout finding photo
-    findingPhotoMime: '',
-    pendingQuickActivity: '' // activity id staged by quickLaunch(), consumed by confirmQuickLaunch()
+/* ---------- persisted state (per-viewer only; this is a demo data layer, not the real Sheets backend) ---------- */
+const STORE_KEY = 'workerapp_state_v1';
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {
+    worker:null, screen:'login', loginErr:'', bedCode:'', bedErr:'', bed:null,
+    activity:null, session:null, modal:null, modalDraft:{}, toast:'', navTab:'field',
+    tables:{ liveSessions:[], activityLog:[], exceptions:[], scouting:[], location:[] },
+    bedIrrigationStatus:{}
   };
+}
+function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
+let S = loadState();
 
-  // Field Actions quick-launch buttons -- each maps to a keyword used to find
-  // a matching activity id in the taxonomy loaded from get-taxonomy (see
-  // findActivityIdForKeywords_). Matching by keyword rather than a hardcoded
-  // canonical id means this keeps working even if ActivityTaxonomy.gs's
-  // exact id spelling changes, as long as the id or its label still contains
-  // the keyword.
-  const QUICK_ACTIONS = {
-    water: { label: 'Water Pass', keywords: ['water', 'irrigation'] },
-    fertilizer: { label: 'Fertilization', keywords: ['fertiliz'] },
-    weeding: { label: 'Weeding', keywords: ['weed'] }
+function nowISO(){ return new Date().toISOString(); }
+function fmtTime(iso){ const d=new Date(iso); return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+function uid(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
+function toast(msg){ S.toast = msg; render(); saveState(); setTimeout(()=>{ if(S.toast===msg){ S.toast=''; render(); saveState(); } }, 2600); }
+
+function elapsedMinutes(session){
+  let total = 0;
+  session.segments.forEach(seg=>{
+    const end = seg.end ? new Date(seg.end) : new Date();
+    total += (end - new Date(seg.start));
+  });
+  return Math.max(0, Math.round(total/60000));
+}
+function elapsedDisplay(session){
+  let total = 0;
+  session.segments.forEach(seg=>{
+    const end = seg.end ? new Date(seg.end) : new Date();
+    total += (end - new Date(seg.start));
+  });
+  const s = Math.max(0, Math.floor(total/1000));
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return h>0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+/* ---------- actions ---------- */
+function doLogin(){
+  const idEl = document.getElementById('in-workerid'), pinEl = document.getElementById('in-pin');
+  const id = idEl.value.trim().toUpperCase(), pin = pinEl.value.trim();
+  const u = USERS.find(u=>u.id.toUpperCase()===id && u.pin===pin);
+  if(!u){ S.loginErr = 'Worker ID or PIN not recognized. Check your badge and try again.'; render(); return; }
+  S.worker = u; S.loginErr=''; S.screen='scan'; render(); saveState();
+}
+function logout(){
+  if(S.session){ toast('Complete or the session before logging out.'); return; }
+  S.worker=null; S.screen='login'; S.bed=null; S.activity=null; render(); saveState();
+}
+function setBedCode(v){ S.bedCode = v; }
+function resolveBed(){
+  const code = (S.bedCode||'').trim().toUpperCase().replace(/^BED:/,'');
+  const bed = BEDS[code];
+  if(!bed){ S.bedErr = 'Unrecognized bed code — check the tag and try again.'; render(); return; }
+  S.bed = Object.assign({id:code}, bed);
+  S.bedErr=''; S.bedCode=''; S.screen='activity'; render(); saveState();
+  S.tables.location.push({Worker_ID:S.worker.id, Bed_ID:code, Timestamp:nowISO()});
+}
+function pickQuick(code){ S.bedCode = code; resolveBed(); }
+function chooseActivity(a){ S.activity = a; render(); }
+function startSession(){
+  if(!S.activity) return;
+  S.session = {
+    Activity_ID: uid('ACT'), Worker_ID:S.worker.id, Bed_ID:S.bed.id, Cohort_ID:S.bed.cohort,
+    Crop_ID:S.bed.crop, Activity:S.activity, Start_Time:nowISO(), Session_Status:'ACTIVE',
+    segments:[{start:nowISO(), end:null}], exceptionsLogged:0
   };
+  S.tables.liveSessions.push(S.session);
+  S.screen='session'; render(); saveState();
+}
+function pauseSession(){
+  const seg = S.session.segments[S.session.segments.length-1];
+  seg.end = nowISO(); S.session.Session_Status='PAUSED'; render(); saveState();
+}
+function resumeSession(){
+  S.session.segments.push({start:nowISO(), end:null});
+  S.session.Session_Status='ACTIVE'; render(); saveState();
+}
+function openModal(name){ S.modal = name; S.modalDraft = {}; render(); }
+function closeModal(){ S.modal=null; S.modalDraft={}; render(); }
+function draft(k,v){ S.modalDraft[k]=v; }
 
-  function setConnStatus(status, label) {
-    var dot = document.getElementById('conn-dot');
-    var text = document.getElementById('conn-text');
-    if (!dot || !text) return;
-    dot.className = 'conn-dot ' + status;
-    text.textContent = label;
+function submitException(){
+  const d = S.modalDraft;
+  if(!d.type || !d.severity){ toast('Type and severity are required.'); return; }
+  const ex = {
+    Exception_ID: uid('EXC'), Cohort_ID:S.bed.cohort, Exception_Type:d.type, Exception_Status:'OPEN',
+    Blocked_Reason:'', Exception_Notes:d.notes||'', Exception_Date:nowISO(), Domain:d.type, Symptom:'',
+    Severity:d.severity, Requires_Action:'TRUE', Worker:S.worker.id, Timestamp:nowISO(), Photo_URL:d.photo||'',
+    Finding_ID:''
+  };
+  if(d.type==='Irrigation'){
+    ex.Irrigation_Zone_ID = S.bed.zone;
+    ex.Irrigation_Fault_Type = d.fault||'';
   }
+  S.tables.exceptions.push(ex);
+  S.session.exceptionsLogged++;
+  toast('Exception reported to Manager queue.');
+  closeModal(); saveState();
+}
 
-  function apiCall(action, payload, callback) {
-    setConnStatus('checking', 'Connecting...');
-    fetch(WEB_APP_URL, {
-      method: 'POST',
-      mode: 'cors',
-      redirect: 'follow', // REQUIRED: Follows Google's 302 backend redirect
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8' // REQUIRED: Avoids CORS OPTIONS preflight
-      },
-      body: JSON.stringify({ action: action, payload: payload })
-    })
-      .then(function(response) {
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        return response.json();
-      })
-      .then(function(res) {
-        setConnStatus('online', 'Connected');
-        callback(res);
-      })
-      .catch(function(error) {
-        console.error('apiCall failed:', action, error);
-        setConnStatus('offline', 'Connection error');
-        alert('Something went wrong (' + action + '): ' + error.message);
-      });
-  }
+function finishActivityLog(extra){
+  const s = S.session;
+  const seg = s.segments[s.segments.length-1];
+  if(!seg.end) seg.end = nowISO();
+  const entry = Object.assign({
+    Activity_ID:s.Activity_ID, Worker:S.worker.id, Bed_ID:s.Bed_ID, Crop_ID:s.Crop_ID,
+    Task_Type:s.Activity, Start_Time:s.Start_Time, End_Time:nowISO(),
+    Duration:elapsedMinutes(s)+' min', Notes:''
+  }, extra||{});
+  S.tables.activityLog.push(entry);
+  S.tables.location.push({Worker_ID:S.worker.id, Bed_ID:s.Bed_ID, Timestamp:nowISO()});
+  s.Session_Status='COMPLETED';
+  S.session = null; S.activity=null; S.bed=null; S.modal=null; S.modalDraft={};
+  S.screen='scan';
+  toast('Session complete — logged to Activity Log.');
+  saveState();
+}
 
-  function switchView(viewId) {
-    VIEW_IDS.forEach(v => {
-      var el = document.getElementById(v);
-      if (el) el.classList.add('hidden');
-    });
-    var target = document.getElementById(viewId);
-    if (target) target.classList.remove('hidden');
-  }
-
-  function appLogin() {
-    state.workerId = document.getElementById('login-worker-id').value;
-    let pin = document.getElementById('login-pin').value;
-
-    apiCall('login', { workerId: state.workerId, pin: pin }, function(res) {
-      if (res && res.success) {
-        state.workerId = res.user.workerId; // canonical ID from the sheet, not whatever case was typed
-        state.workerName = res.user.name;
-        // Persisted so a browser refresh (or the worker app losing focus/
-        // reloading on a field device) doesn't drop the worker back to the
-        // login screen -- see restoreSessionOnLoad(). sessionStorage (not
-        // localStorage) so it clears itself once the tab/app is fully
-        // closed, rather than leaving a standing login on a shared device.
-        try {
-          sessionStorage.setItem('vpos_workerId', state.workerId);
-          sessionStorage.setItem('vpos_workerName', state.workerName);
-        } catch (e) { /* storage unavailable -- login still works, just won't survive a refresh */ }
-        enterAppAsWorker_();
-      } else {
-        alert('Authentication failed: ' + (res.error || 'Invalid credentials'));
-      }
-    });
-  }
-
-  // Shared by a fresh login and a restored session -- shows the app header
-  // and loads the same three things either way, so a restored session ends
-  // up in an identical state to one that just logged in.
-  function enterAppAsWorker_() {
-    document.getElementById('app-header').classList.remove('hidden');
-    document.getElementById('header-user-name').textContent = state.workerName + ' (' + state.workerId + ')';
-    loadTaxonomy();
-    loadCropPicklist();
-    loadBeds();
-    loadMySessions();
-  }
-
-  // Runs once on page load. If a worker was logged in before a refresh,
-  // skip the login screen and restore them straight to their active
-  // sessions instead of making them re-enter their PIN.
-  function restoreSessionOnLoad() {
-    var workerId, workerName;
-    try {
-      workerId = sessionStorage.getItem('vpos_workerId');
-      workerName = sessionStorage.getItem('vpos_workerName');
-    } catch (e) { return; }
-    if (!workerId) return;
-
-    state.workerId = workerId;
-    state.workerName = workerName || workerId;
-    enterAppAsWorker_();
-  }
-
-  // Logs the LOGOUT event server-side (LOGIN_LOG accountability trail) and
-  // then resets local state. Fired off before state is cleared since we
-  // need workerId to log it; the UI resets immediately rather than waiting
-  // on the network round-trip.
-  function appLogout() {
-    var loggedOutWorkerId = state.workerId;
-    if (loggedOutWorkerId) {
-      apiCall('logout', { workerId: loggedOutWorkerId }, function() {});
-    }
-    try {
-      sessionStorage.removeItem('vpos_workerId');
-      sessionStorage.removeItem('vpos_workerName');
-    } catch (e) { /* storage unavailable -- nothing to clear */ }
-
-    state = {
-      workerId: '', workerName: '', bedId: '', cohortId: '', crop: '', selectedActivity: '',
-      newPlantingCropId: '', cropPicklist: [],
-      sessionId: '', taxonomyGroups: {}, taxonomyLabels: {},
-      scoutDomains: [], scoutDomainLabels: {}, scoutSeverities: [],
-      allBeds: [], openSessions: [], myHistory: [],
-      sessionTotes: [], sessionFindings: [],
-      exceptionPhotoBase64: '', exceptionPhotoMime: '',
-      findingPhotoBase64: '', findingPhotoMime: ''
+function completeGeneric(){
+  const d = S.modalDraft;
+  finishActivityLog({Quantity:d.qty||'', Unit:d.unit||'', Notes:d.notes||''});
+}
+function completeIrrigationCheck(){
+  const d = S.modalDraft;
+  if(!d.result){ toast('Choose PASS or FAIL.'); return; }
+  if(d.result==='FAIL'){
+    if(!d.fault){ toast('Select a fault type.'); return; }
+    const ex = {
+      Exception_ID: uid('EXC'), Cohort_ID:S.bed.cohort, Exception_Type:'IRRIGATION_FAULT', Exception_Status:'OPEN',
+      Blocked_Reason:'', Exception_Notes:d.notes||'', Exception_Date:nowISO(), Domain:'Irrigation', Symptom:d.fault,
+      Severity: (d.fault==='BLOWOUT'||d.fault==='LEAK') ? 'HIGH' : 'MEDIUM', Requires_Action:'TRUE',
+      Worker:S.worker.id, Timestamp:nowISO(), Photo_URL:d.photo||'', Finding_ID:'',
+      Irrigation_Zone_ID:S.bed.zone, Irrigation_Fault_Type:d.fault
     };
-    document.getElementById('login-worker-id').value = '';
-    document.getElementById('login-pin').value = '';
-    document.getElementById('app-header').classList.add('hidden');
-    document.getElementById('header-user-name').textContent = '';
-    resetBedSearch();
-    switchView('view-login');
+    S.tables.exceptions.push(ex);
+    const sev = (d.fault==='BLOWOUT'||d.fault==='LEAK') ? 'CRITICAL':'AT_RISK';
+    S.bedIrrigationStatus[S.bed.id] = sev;
+  } else {
+    S.bedIrrigationStatus[S.bed.id] = 'NORMAL';
   }
-
-  // Loads ALL of this worker's ACTIVE/PAUSED sessions and lands them on the
-  // "My Active Sessions" hub -- workers can multi-task, so login no longer
-  // assumes there's just one session to resume into. An empty list still
-  // lands here (with a "+ Start New Task" button) rather than jumping
-  // straight to the scan screen, so the hub is always the consistent home base.
-  function loadMySessions() {
-    apiCall('get-open-sessions', { workerId: state.workerId }, function(res) {
-      state.openSessions = (res && res.success && res.sessions) ? res.sessions : [];
-      renderMySessions();
-      switchView('view-my-sessions');
-    });
-  }
-
-  function renderMySessions() {
-    let subtitle = document.getElementById('my-sessions-subtitle');
-    if (subtitle) subtitle.textContent = state.workerName ? ('Logged in as ' + state.workerName + ' (' + state.workerId + ')') : '';
-
-    let container = document.getElementById('my-sessions-list');
-    container.innerHTML = '';
-
-    if (state.openSessions.length === 0) {
-      container.innerHTML = '<div class="empty-state">No active tasks right now. Scan a bed to start one.</div>';
-      return;
-    }
-
-    state.openSessions.forEach(function(s) {
-      let row = document.createElement('div');
-      row.className = 'session-row';
-
-      // PLANNED: a manager dispatched this task but nobody has started it
-      // yet (see handleDispatchTask_ / get-open-sessions, Code.gs). It gets
-      // its own badge/label/action rather than being lumped in with
-      // ACTIVE -- that's the whole point of this status existing: a
-      // dispatched task shouldn't look or act like it's already underway.
-      let badgeClass = s.isPlanned ? 'badge badge-planned' : (s.status === 'PAUSED' ? 'badge badge-paused' : 'badge badge-active');
-      let badgeLabel = s.isPlanned ? 'ASSIGNED' : s.status;
-      let primaryLabel = s.isPlanned ? 'Start' : (s.status === 'PAUSED' ? 'Resume' : 'Open');
-      let pauseNote = (s.status === 'PAUSED' && s.pauseType)
-        ? ' &middot; ' + pauseTypeLabel(s.pauseType)
-        : '';
-      // PLANNED rows have no Start_Time yet -- show who dispatched it and
-      // when instead of a bogus timestamp (new Date('') is Invalid Date).
-      // dispatchedByName/dispatchedAt come from Dispatched_By/Dispatched_At
-      // (see handleDispatchTask_/handleGetOpenSessions_, Code.gs) -- both
-      // are optional, so this still degrades gracefully to "assigned to
-      // you" if either is missing (e.g. an older row from before those
-      // columns existed).
-      let metaTail;
-      if (s.isPlanned) {
-        if (s.dispatchedByName && s.dispatchedAt) {
-          metaTail = 'assigned by ' + s.dispatchedByName + ' at ' + new Date(s.dispatchedAt).toLocaleTimeString();
-        } else if (s.dispatchedByName) {
-          metaTail = 'assigned by ' + s.dispatchedByName;
-        } else {
-          metaTail = 'assigned to you';
-        }
-      } else {
-        metaTail = 'started ' + new Date(s.startTime).toLocaleTimeString() + pauseNote;
-      }
-      let reassignedHtml = s.reassignedToMe
-        ? '<div class="sr-reassigned">&#8635; Reassigned to you from ' + s.reassignedFromName +
-          (s.reassignedByName ? ' by ' + s.reassignedByName : '') +
-          (s.reassignedNote ? ': "' + s.reassignedNote + '"' : '') +
-          '</div>'
-        : '';
-
-      row.innerHTML =
-        '<div class="session-row-top">' +
-          '<span class="sr-bed">' + s.bedId + '</span>' +
-          '<span class="' + badgeClass + '">' + badgeLabel + '</span>' +
-        '</div>' +
-        '<div class="sr-meta">' + labelForActivity(s.activity) + ' &middot; ' + metaTail + '</div>' +
-        reassignedHtml +
-        '<div class="sr-actions">' +
-          '<button class="sr-btn-primary">' + primaryLabel + '</button>' +
-          (s.isPlanned ? '' : '<button class="sr-btn-complete btn-secondary">Complete</button>') +
-        '</div>';
-
-      // PLANNED goes through startPlannedSession (start-planned-session
-      // action) instead of straight into the execution screen -- it needs
-      // to stamp the real Start_Time server-side first (see
-      // handleStartPlannedSession_, Code.gs).
-      row.querySelector('.sr-btn-primary').onclick = s.isPlanned
-        ? function() { startPlannedSession(s); }
-        : function() { openSessionDetail(s); };
-      if (!s.isPlanned) {
-        row.querySelector('.sr-btn-complete').onclick = function() { quickCompleteSession(s); };
-      }
-
-      container.appendChild(row);
-    });
-  }
-
-  // Worker's "Start" tap on a dispatched-but-not-started (PLANNED) task from
-  // the "My Active Sessions" hub. Calls start-planned-session to flip the
-  // session to ACTIVE server-side (stamping the real Start_Time there, not
-  // here), then opens the normal execution screen exactly like any other
-  // freshly-started session.
-  function startPlannedSession(s) {
-    apiCall('start-planned-session', { sessionId: s.sessionId, workerId: state.workerId }, function(res) {
-      if (!res || !res.success) {
-        alert(res && res.error ? res.error : 'Failed to start task');
-        return;
-      }
-      s.status = 'ACTIVE';
-      s.isPlanned = false;
-      s.startTime = res.startTime;
-      openSessionDetail(s);
-    });
-  }
-
-  // Completed-activity history for THIS worker only -- get-activity-history
-  // is called with just workerId (no managerId), so the backend scopes it to
-  // this worker's own FIELD_ACTIVITY_LOG rows. This is where a completed
-  // session actually shows up once it drops off "My Active Sessions".
-  function loadMyHistory() {
-    apiCall('get-activity-history', { workerId: state.workerId, limit: 50 }, function(res) {
-      if (!res || !res.success) {
-        alert(res && res.error ? res.error : 'Failed to load history');
-        return;
-      }
-      state.myHistory = res.entries;
-      renderMyHistory();
-      switchView('view-my-history');
-    });
-  }
-
-  function renderMyHistory() {
-    let container = document.getElementById('my-history-list');
-    container.innerHTML = '';
-
-    if (state.myHistory.length === 0) {
-      container.innerHTML = '<div class="empty-state">No completed activity yet.</div>';
-      return;
-    }
-
-    state.myHistory.forEach(function(h) {
-      let row = document.createElement('div');
-      row.className = 'session-row';
-      let when = h.timestamp ? new Date(h.timestamp).toLocaleString() : '';
-
-      let bodyHtml;
-      if (h.isStateChange) {
-        bodyHtml = '<div class="sr-meta">' + h.fromState + ' &rarr; ' + h.toState + '</div>';
-      } else {
-        let qtyNote = h.quantity ? (' &middot; ' + h.quantity + (h.unit ? ' ' + h.unit : '')) : '';
-        let excNote = h.exceptionFlag ? (' &middot; ' + h.exceptionType) : '';
-        bodyHtml = '<div class="sr-meta">' +
-          (h.elapsedMinutes !== null ? h.elapsedMinutes + ' min active' : '') + qtyNote + excNote +
-        '</div>';
-        if (h.exceptionFlag) {
-          bodyHtml = bodyHtml.replace('class="sr-meta"', 'class="sr-meta" style="color:#c62828;"');
-        }
-      }
-
-      row.innerHTML =
-        '<div class="session-row-top">' +
-          '<span class="sr-bed">' + (h.bedId || h.cohortId || '-') + '</span>' +
-          '<span class="badge">' + h.activityLabel + '</span>' +
-        '</div>' +
-        bodyHtml +
-        '<div class="sr-meta">' + when + '</div>';
-
-      container.appendChild(row);
-    });
-  }
-
-  // Opens a specific session's execution screen (pause/complete/report
-  // exception act on THIS session only -- other open sessions are untouched).
-  function openSessionDetail(s) {
-    state.bedId = s.bedId;
-    state.cohortId = s.cohortId;
-    state.selectedActivity = s.activity;
-    state.sessionId = s.sessionId;
-
-    document.getElementById('exec-bed').textContent = s.bedId;
-    document.getElementById('exec-task').textContent = labelForActivity(s.activity);
-    document.getElementById('exec-start').textContent = new Date(s.startTime).toLocaleTimeString();
-
-    let statusLbl = document.getElementById('lbl-status');
-    statusLbl.className = 'badge ' + (s.status === 'PAUSED' ? 'badge-paused' : 'badge-active');
-    statusLbl.textContent = s.status;
-
-    // Resuming a session in a fresh app visit has no client-side tote
-    // history to show (see the note in handleLogHarvestTote_, Code.gs) --
-    // the HARVEST_LOG rows already written are safe either way, only this
-    // running-list display resets.
-    state.sessionTotes = [];
-    state.sessionFindings = [];
-    renderToteLog();
-    renderSessionFindings();
-    updateHarvestSectionVisibility();
-    updateScoutSectionVisibility();
-
-    if (s.status === 'PAUSED') {
-      apiCall('resume-session', { sessionId: s.sessionId }, function() {
-        statusLbl.className = 'badge badge-active';
-        statusLbl.textContent = 'ACTIVE';
-        switchView('view-execution');
-      });
-    } else {
-      switchView('view-execution');
-    }
-  }
-
-  // Completes a session directly from the hub list without opening its
-  // detail screen -- lets a worker close out one task while others keep running.
-  function quickCompleteSession(s) {
-    let quantity = 0;
-    if (s.activity === 'Harvest') {
-      quantity = prompt('Enter harvested quantity (lbs/crates) for ' + s.bedId + ':', '0');
-      if (quantity === null) return; // cancelled
-    }
-    apiCall('complete-session', { sessionId: s.sessionId, quantity: quantity }, function(res) {
-      if (res && res.success) {
-        loadMySessions();
-      }
-    });
-  }
-
-  function loadBeds() {
-    apiCall('list-beds', {}, function(res) {
-      if (res && res.success) {
-        state.allBeds = res.beds;
-      }
-    });
-  }
-
-  function renderBedSearchResults() {
-    let query = document.getElementById('bed-search-input').value.trim().toUpperCase();
-    let container = document.getElementById('bed-search-results');
-    container.innerHTML = '';
-
-    // Empty query -> show the full bed list (acts like a tap-to-open
-    // dropdown) instead of nothing; typing narrows it from there.
-    let allMatches = query ? state.allBeds.filter(function(b) {
-      return (b.bedId && b.bedId.toUpperCase().indexOf(query) !== -1) ||
-             (b.block && b.block.toUpperCase().indexOf(query) !== -1) ||
-             (b.crop && b.crop.toUpperCase().indexOf(query) !== -1) ||
-             (b.cropName && b.cropName.toUpperCase().indexOf(query) !== -1);
-    }) : state.allBeds.slice().sort(function(a, b) { return String(a.bedId).localeCompare(String(b.bedId)); });
-
-    // Render cap kept only as a safety ceiling, not a practical limit at
-    // current ranch scale (~220 beds) -- NOT a data limit. state.allBeds
-    // already holds every bed from the backend, and everything up to this
-    // cap is shown; only truncation past RENDER_CAP is disclosed to the
-    // worker via the count note below. Raise this if the bed count grows
-    // well past ~250 and DOM render time becomes noticeable on field devices.
-    var RENDER_CAP = 250;
-    let matches = allMatches.slice(0, RENDER_CAP);
-
-    if (matches.length === 0) {
-      container.innerHTML = query
-        ? '<div class="bed-empty-msg">No beds match "' + query + '"</div>'
-        : '<div class="bed-empty-msg">No beds loaded yet.</div>';
-      return;
-    }
-
-    matches.forEach(function(b) {
-      let row = document.createElement('div');
-      row.className = 'bed-result';
-      row.onclick = function() { selectBedFromSearch(b.bedId); };
-      row.innerHTML = '<div class="bed-id">' + b.bedId + '</div>' +
-        '<div class="bed-meta">Block ' + (b.block || '-') + ' &middot; ' + (b.cropName || b.crop) + ' &middot; ' + (b.state || '-') + '</div>';
-      container.appendChild(row);
-    });
-
-    if (allMatches.length > RENDER_CAP) {
-      let note = document.createElement('div');
-      note.className = 'bed-meta';
-      note.style.marginTop = '8px';
-      note.textContent = 'Showing ' + RENDER_CAP + ' of ' + allMatches.length + ' matches — refine your search to narrow it down.';
-      container.appendChild(note);
-    }
-  }
-
-  function selectBedFromSearch(bedId) {
-    document.getElementById('scan-qr-input').value = 'BED:' + bedId;
-    appScanQR();
-  }
-
-  function labelForActivity(act) {
-    return (state.taxonomyLabels && state.taxonomyLabels[act]) || act;
-  }
-
-  var PAUSE_TYPE_LABELS = { BREAK: 'On Break', LUNCH: 'On Lunch', END_OF_DAY: 'Done for Day' };
-  function pauseTypeLabel(pauseType) {
-    return PAUSE_TYPE_LABELS[pauseType] || pauseType;
-  }
-
-  // Crop picklist for the planting-gate crop picker (2026-09-05). Loaded
-  // once at startup, same pattern as loadTaxonomy() -- CROP_REFERENCE is
-  // static reference data, not something that changes mid-shift.
-  function loadCropPicklist() {
-    apiCall('get-crop-picklist', {}, function(res) {
-      if (res && res.success) {
-        state.cropPicklist = res.crops || [];
-        // Re-run the gate in case a worker already had the planting screen
-        // open and hit the "crop list hasn't loaded yet" fallback above.
-        updatePlantingGateWarning();
-      }
-    });
-  }
-
-  // Used only as a defensive fallback in appScanQR (see 2026-09-08 comment
-  // there) when a scanned bed comes back with a raw Crop_ID but no
-  // cropName. Returns '' rather than undefined if the picklist hasn't
-  // loaded yet or the code isn't in it -- callers already chain further
-  // fallbacks after this one.
-  function cropNameFromPicklist_(cropId) {
-    if (!cropId || !state.cropPicklist) return '';
-    let hit = state.cropPicklist.find(function(c) { return c.cropId === cropId; });
-    return hit ? hit.cropName : '';
-  }
-
-  function loadTaxonomy() {
-    apiCall('get-taxonomy', {}, function(res) {
-      if (res && res.success && res.taxonomy) {
-        state.taxonomyGroups = res.taxonomy.groups;
-        state.taxonomyLabels = res.taxonomy.labels || {};
-        state.scoutDomains = res.taxonomy.scoutDomains || [];
-        state.scoutDomainLabels = res.taxonomy.scoutDomainLabels || {};
-        state.scoutSeverities = res.taxonomy.scoutSeverities || [];
-        // plantingActivityTypes/bedUnassignedStates (2026-09-05) -- same
-        // arrays ActivityTaxonomy.gs's isPlantingActivity()/
-        // isBedUnassignedState() are built from, and the same ones
-        // resolveSessionCohortAndCrop_ (Database.gs) gates start-session
-        // against server-side. Kept here so this screen can warn BEFORE a
-        // worker taps Start Task and hits that gate blind, instead of only
-        // surfacing it as a bare alert() after the request round-trips and
-        // fails.
-        state.plantingActivityTypes = res.taxonomy.plantingActivityTypes || [];
-        state.bedUnassignedStates = res.taxonomy.bedUnassignedStates || [];
-        renderTaxonomyPicker();
-        renderScoutFormOptions();
-      }
-    });
-  }
-
-  // Populates the domain/severity <select> elements on the scout finding
-  // form. Called once taxonomy loads, and again defensively when the form
-  // is opened (appOpenScoutFinding) in case it's ever reached before
-  // get-taxonomy's response lands.
-  function renderScoutFormOptions() {
-    let domainSelect = document.getElementById('scout-domain');
-    let severitySelect = document.getElementById('scout-severity');
-    if (!domainSelect || !severitySelect) return;
-
-    domainSelect.innerHTML = '';
-    state.scoutDomains.forEach(function(d) {
-      let opt = document.createElement('option');
-      opt.value = d;
-      opt.textContent = state.scoutDomainLabels[d] || d;
-      domainSelect.appendChild(opt);
-    });
-
-    severitySelect.innerHTML = '';
-    state.scoutSeverities.forEach(function(s) {
-      let opt = document.createElement('option');
-      opt.value = s;
-      opt.textContent = scoutSeverityLabel(s);
-      severitySelect.appendChild(opt);
-    });
-  }
-
-  function renderTaxonomyPicker() {
-    let container = document.getElementById('activity-picker-container');
-    container.innerHTML = '';
-
-    let select = document.createElement('select');
-    select.id = 'activity-select-dropdown';
-
-    for (let group in state.taxonomyGroups) {
-      let optgroup = document.createElement('optgroup');
-      optgroup.label = group;
-
-      state.taxonomyGroups[group].forEach(act => {
-        let opt = document.createElement('option');
-        opt.value = act; // raw canonical ID -- this is what gets sent to start-session
-        opt.textContent = labelForActivity(act); // human-readable label if available, falls back to the ID
-        optgroup.appendChild(opt);
-      });
-      select.appendChild(optgroup);
-    }
-    container.appendChild(select);
-    select.addEventListener('change', updateHarvestPlanVisibility);
-    select.addEventListener('change', updatePlantingGateWarning);
-    updateHarvestPlanVisibility();
-    updatePlantingGateWarning();
-  }
-
-  // Runs BEFORE the worker taps Start Task, whenever the selected activity
-  // is a planting one (Seeding/Transplanting/Replanting) and the scanned bed
-  // has no cohort to plant into (Rest/Prep, see resolveSessionCohortAndCrop_'s
-  // header comment in Database.gs).
-  //
-  // REWORKED 2026-09-05 (worker pending-cohort flow): this used to hard-block
-  // Start Task with a warning telling the worker to find a manager. It now
-  // shows a crop picker instead -- picking a crop and starting mints a fresh,
-  // unverified ("pending") cohort server-side via resolveSessionCohortAndCrop_'s
-  // newPlantingCropId path, the same way a manager's dispatch-side "New
-  // Cohort" step does, just triggered from the worker's own Start Task tap.
-  // A manager still has to verify the resulting activity later (Verify &
-  // Lock DOB) before the bed/cohort leave Rest/Prep for real -- this only
-  // unblocks STARTING the work, not the lifecycle transition itself.
-  //
-  // Falls back to the old hard-block message only if the crop picklist
-  // hasn't loaded yet (loadCropPicklist() failed or is still in flight) --
-  // better to tell the worker to wait/retry than let them start a planting
-  // session with no way to actually pick what's being planted.
-  function updatePlantingGateWarning() {
-    let dropdown = document.getElementById('activity-select-dropdown');
-    let warningEl = document.getElementById('planting-gate-warning');
-    let pickerEl = document.getElementById('planting-gate-crop-picker');
-    let startBtn = document.getElementById('btn-use-bed');
-    if (!dropdown || !warningEl || !pickerEl || !startBtn) return;
-
-    let plantingTypes = state.plantingActivityTypes || [];
-    let unassignedStates = state.bedUnassignedStates || [];
-    let isPlantingActivity = plantingTypes.indexOf(dropdown.value) !== -1;
-    let bedHasNoCohort = unassignedStates.indexOf(state.bedState) !== -1;
-
-    if (!isPlantingActivity || !bedHasNoCohort) {
-      warningEl.classList.add('hidden');
-      pickerEl.classList.add('hidden');
-      state.newPlantingCropId = '';
-      startBtn.disabled = false;
-      return;
-    }
-
-    if (!state.cropPicklist || !state.cropPicklist.length) {
-      // Picklist not loaded -- fall back to the old hard block rather than
-      // letting a planting session start with nothing to attach it to.
-      pickerEl.classList.add('hidden');
-      warningEl.textContent = '\u26A0\uFE0F ' + labelForActivity(dropdown.value) + ' needs a crop selected, but the crop list hasn\'t loaded yet -- try rescanning the bed.';
-      warningEl.classList.remove('hidden');
-      startBtn.disabled = true;
-      return;
-    }
-
-    warningEl.classList.add('hidden');
-    pickerEl.classList.remove('hidden');
-    renderPlantingGateCropSelect_();
-    startBtn.disabled = !state.newPlantingCropId;
-  }
-
-  function renderPlantingGateCropSelect_() {
-    let select = document.getElementById('planting-gate-crop-select');
-    if (!select) return;
-    // Only rebuild options if empty, so re-running this on every dropdown
-    // change (updatePlantingGateWarning fires on activity-select's change
-    // event) doesn't blow away the worker's already-made crop choice.
-    if (!select.options.length) {
-      let placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.textContent = 'Select a crop\u2026';
-      select.appendChild(placeholder);
-      state.cropPicklist.forEach(c => {
-        let opt = document.createElement('option');
-        opt.value = c.cropId;
-        opt.textContent = c.cropName;
-        select.appendChild(opt);
-      });
-    }
-    select.value = state.newPlantingCropId || '';
-  }
-
-  function onPlantingGateCropChange() {
-    let select = document.getElementById('planting-gate-crop-select');
-    let startBtn = document.getElementById('btn-use-bed');
-    if (!select || !startBtn) return;
-    state.newPlantingCropId = select.value;
-    startBtn.disabled = !state.newPlantingCropId;
-  }
-
-  // Only Harvest exposes the "schedule as a planned harvest" toggle -- every
-  // other activity's Confirm Assignment screen looks exactly as it did
-  // before this feature existed.
-  function updateHarvestPlanVisibility() {
-    let dropdown = document.getElementById('activity-select-dropdown');
-    let group = document.getElementById('harvest-plan-toggle-group');
-    if (!dropdown || !group) return;
-    let isHarvest = dropdown.value === 'Harvest';
-    group.style.display = isHarvest ? 'block' : 'none';
-    if (!isHarvest) {
-      let check = document.getElementById('harvest-plan-check');
-      if (check) check.checked = false;
-      let fields = document.getElementById('harvest-plan-fields');
-      if (fields) fields.classList.add('hidden');
-    }
-  }
-
-  function toggleHarvestPlanFields() {
-    let checked = document.getElementById('harvest-plan-check').checked;
-    document.getElementById('harvest-plan-fields').classList.toggle('hidden', !checked);
-  }
-
-  // Only Harvest sessions show the tote-logging block on the execution view.
-  function updateHarvestSectionVisibility() {
-    let section = document.getElementById('harvest-tote-section');
-    if (!section) return;
-    section.classList.toggle('hidden', state.selectedActivity !== 'Harvest');
-  }
-
-  // Only PestScouting/DiseaseScouting/CropInspection/MaturityInspection
-  // sessions show the "Log Scout Finding" block -- matches
-  // SCOUTING_ACTIVITY_TYPES_ in ActivityTaxonomy.gs, which is what
-  // logScoutFinding_ actually enforces server-side. Hiding it for other
-  // activities here is just a UX nicety; the real gate is server-side.
-  function updateScoutSectionVisibility() {
-    let section = document.getElementById('scout-finding-section');
-    if (!section) return;
-    section.classList.toggle('hidden', SCOUTING_ACTIVITY_TYPES.indexOf(state.selectedActivity) === -1);
-  }
-
-  function appLogHarvestTote() {
-    let gross = parseFloat(document.getElementById('tote-gross').value);
-    let tare = parseFloat(document.getElementById('tote-tare').value) || 0;
-    let crates = parseInt(document.getElementById('tote-crates').value, 10) || 1;
-    let grade = document.getElementById('tote-grade').value;
-
-    if (isNaN(gross) || gross <= 0) return alert('Enter a gross weight greater than 0.');
-    if (tare < 0) return alert('Tare weight cannot be negative.');
-    if (tare >= gross) return alert('Tare weight must be less than gross weight.');
-
-    apiCall('log-harvest-tote', {
-      sessionId: state.sessionId,
-      grossWeightLbs: gross,
-      tareWeightLbs: tare,
-      crateCount: crates,
-      qualityGrade: grade
-    }, function(res) {
-      if (res && res.success) {
-        state.sessionTotes.push(res);
-        renderToteLog();
-        document.getElementById('tote-gross').value = '';
-        document.getElementById('tote-tare').value = '0';
-        document.getElementById('tote-crates').value = '1';
-      } else {
-        alert(res && res.error ? res.error : 'Failed to log tote');
-      }
-    });
-  }
-
-  function renderToteLog() {
-    let list = document.getElementById('tote-log-list');
-    let totalEl = document.getElementById('tote-log-total');
-    if (!list || !totalEl) return;
-    list.innerHTML = '';
-    let totalNet = 0;
-
-    state.sessionTotes.forEach(function(t) {
-      totalNet += Number(t.netWeightLbs) || 0;
-      let row = document.createElement('div');
-      row.className = 'bed-result';
-      row.style.cursor = 'default';
-      row.innerHTML =
-        '<div class="bed-id">' + t.netWeightLbs + ' lbs net &middot; ' + t.crateCount + ' crate(s) &middot; Grade ' + t.qualityGrade + '</div>' +
-        '<div class="bed-meta"><span class="code-chip">' + t.qrCode + '</span></div>';
-      list.appendChild(row);
-    });
-
-    totalEl.textContent = state.sessionTotes.length
-      ? ('Total logged this session: ' + totalNet.toFixed(1) + ' lbs across ' + state.sessionTotes.length + ' tote(s).')
-      : '';
-  }
-
-  // Reads the selected photo file, downsamples it into a base64 payload the
-  // exception report can carry, and shows a preview + remove option. Kept
-  // to a generous-but-bounded size so a full-resolution phone photo doesn't
-  // blow past what a single POST body can comfortably carry on a field
-  // connection.
-  function handleExceptionPhotoSelect(evt) {
-    let file = evt.target.files && evt.target.files[0];
-    let preview = document.getElementById('exc-photo-preview');
-    if (!file) { clearExceptionPhoto(); return; }
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
-      evt.target.value = '';
-      return;
-    }
-    const MAX_BYTES = 8 * 1024 * 1024;
-    if (file.size > MAX_BYTES) {
-      alert('Photo is too large (max 8MB). Please choose a smaller image.');
-      evt.target.value = '';
-      return;
-    }
-
-    let reader = new FileReader();
-    reader.onload = function() {
-      let dataUrl = reader.result; // "data:image/jpeg;base64,...."
-      let commaIdx = dataUrl.indexOf(',');
-      state.exceptionPhotoBase64 = dataUrl.substring(commaIdx + 1);
-      state.exceptionPhotoMime = file.type;
-      preview.innerHTML =
-        '<img src="' + dataUrl + '" style="max-width:100%; border-radius:6px;">' +
-        '<button type="button" class="btn-secondary" style="margin-top:6px;" onclick="clearExceptionPhoto()">Remove Photo</button>';
+  finishActivityLog({Notes:'IrrigationCheck: '+d.result+(d.fault?(' / '+d.fault):'')+(d.notes?(' — '+d.notes):'')});
+}
+function completeScouting(){
+  const d = S.modalDraft;
+  if(!d.domain || !d.severity){ toast('Domain and severity are required.'); return; }
+  const finding = {
+    Finding_ID: uid('FND'), Bed_ID:S.bed.id, Cohort_ID:S.bed.cohort, Domain:d.domain, Symptom:d.symptom||'',
+    Severity:d.severity, Requires_Action: d.requiresAction ? 'TRUE':'FALSE', Notes:d.notes||'', Photo_URL:d.photo||'',
+    Worker:S.worker.id, Timestamp:nowISO(), Exception_ID:'', Resolved_Status:'OPEN'
+  };
+  if(d.requiresAction){
+    const ex = {
+      Exception_ID: uid('EXC'), Cohort_ID:S.bed.cohort, Exception_Type:d.domain, Exception_Status:'OPEN',
+      Blocked_Reason:'', Exception_Notes:d.notes||'', Exception_Date:nowISO(), Domain:d.domain, Symptom:d.symptom||'',
+      Severity:d.severity, Requires_Action:'TRUE', Worker:S.worker.id, Timestamp:nowISO(), Photo_URL:d.photo||'',
+      Finding_ID:finding.Finding_ID
     };
-    reader.readAsDataURL(file);
+    finding.Exception_ID = ex.Exception_ID;
+    S.tables.exceptions.push(ex);
   }
+  S.tables.scouting.push(finding);
+  finishActivityLog({Notes:'Scouting: '+d.domain+' / '+d.severity});
+}
+function completeHarvest(){
+  const d = S.modalDraft;
+  if(!d.qty){ toast('Enter a quantity.'); return; }
+  finishActivityLog({Quantity:d.qty, Unit:d.unit||HARVEST_UNITS[0]});
+}
 
-  function clearExceptionPhoto() {
-    state.exceptionPhotoBase64 = '';
-    state.exceptionPhotoMime = '';
-    let input = document.getElementById('exc-photo');
-    if (input) input.value = '';
-    let preview = document.getElementById('exc-photo-preview');
-    if (preview) preview.innerHTML = '';
+function setNav(tab){ S.navTab = tab; render(); saveState(); }
+
+/* ---------- render ---------- */
+function esc(s){ return (s===undefined||s===null) ? '' : String(s); }
+
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = screenHTML();
+  const idEl = document.getElementById('in-workerid');
+  if(idEl) idEl.focus();
+  attachEnter();
+}
+function attachEnter(){
+  document.querySelectorAll('[data-enter]').forEach(el=>{
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter'){ window[el.dataset.enter](); } });
+  });
+}
+
+function topbar(title, sub, showLogout){
+  return `<div class="topbar">
+    <div><div class="brand">${esc(title)}</div><div class="sub">${esc(sub)}</div></div>
+    ${showLogout ? `<button onclick="logout()">Log out</button>` : ''}
+  </div>`;
+}
+
+function screenHTML(){
+  if(!S.worker) return loginScreen();
+  let body;
+  if(S.session) body = sessionScreen();
+  else if(S.navTab==='logs') body = logsScreen();
+  else if(S.screen==='activity' && S.bed) body = activityScreen();
+  else body = scanScreen();
+  return body + (S.toast ? `<div class="toast">${esc(S.toast)}</div>` : '') + modalHTML();
+}
+
+function loginScreen(){
+  return `
+  ${topbar('WorkerApp','Ngapori Ranch — Field Execution')}
+  <div class="content">
+    <h1>Log in</h1>
+    <p class="lead">Enter your Worker ID and PIN to start your shift.</p>
+    ${S.loginErr ? `<div class="error">${esc(S.loginErr)}</div>` : ''}
+    <div class="field"><label>Worker ID</label><input id="in-workerid" data-enter="doLogin" placeholder="usr-worker1" autocomplete="off"></div>
+    <div class="field"><label>PIN</label><input id="in-pin" data-enter="doLogin" type="password" inputmode="numeric" placeholder="••••"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Log in</button>
+    <p class="lead" style="margin-top:18px;font-size:12px;">Demo ID: usr-worker1 / 1234</p>
+  </div>`;
+}
+
+function scanScreen(){
+  return `
+  ${topbar('WorkerApp', S.worker.name, true)}
+  <div class="content">
+    <h1>Scan a bed</h1>
+    <p class="lead">Scan the bed's QR tag, or enter its code below to resolve the crop, cohort and allowed activities.</p>
+    ${S.bedErr ? `<div class="error">${esc(S.bedErr)}</div>` : ''}
+    <div class="field">
+      <label>Bed code</label>
+      <input id="in-bedcode" data-enter="resolveBed" placeholder="BED:B1-17" value="${esc(S.bedCode)}" oninput="setBedCode(this.value)" autocomplete="off">
+    </div>
+    <button class="btn btn-primary" onclick="resolveBed()">Resolve bed</button>
+    <p class="lead" style="margin:16px 0 6px;font-size:12px;">Camera scanning isn't available in this preview — tap a demo tag instead:</p>
+    <div class="quickcodes">
+      ${Object.keys(BEDS).map(c=>`<button class="quickcode" onclick="pickQuick('${c}')">${c}</button>`).join('')}
+    </div>
+  </div>
+  ${navbar()}`;
+}
+
+function activityScreen(){
+  const b = S.bed;
+  const irr = S.bedIrrigationStatus[b.id];
+  return `
+  ${topbar('WorkerApp', S.worker.name, true)}
+  <div class="content">
+    <h1>${esc(b.id)}</h1>
+    <p class="lead">${esc(b.block)} · ${esc(b.zone)}</p>
+    <div class="card">
+      <div class="row"><span>Crop</span><span>${esc(b.crop)}</span></div>
+      <div class="row"><span>Cohort</span><span>${esc(b.cohort)}</span></div>
+      ${irr ? `<div class="row"><span>Irrigation</span><span><span class="chip ${irr==='NORMAL'?'chip-ok':irr==='CRITICAL'?'chip-danger':'chip-warn'}">${irr}</span></span></div>` : ''}
+    </div>
+    <h2>Select activity</h2>
+    ${b.activities.map(a=>`
+      <button class="activity-btn" onclick="chooseActivity('${a}')" style="${S.activity===a?'border-color:var(--forest);background:var(--sand);':''}">
+        <span>${labelize(a)}</span><span class="tag">${S.activity===a?'Selected':'Tap to select'}</span>
+      </button>`).join('')}
+    <button class="btn btn-primary" ${S.activity?'':'disabled'} onclick="startSession()" style="margin-top:8px;">Start session</button>
+    <button class="btn btn-ghost" onclick="S.bed=null;S.activity=null;S.screen='scan';render();saveState();">Scan a different bed</button>
+  </div>
+  ${navbar()}`;
+}
+
+function labelize(a){
+  return a.replace(/([a-z])([A-Z])/g,'$1 $2');
+}
+
+function sessionScreen(){
+  const s = S.session;
+  const paused = s.Session_Status==='PAUSED';
+  return `
+  ${topbar('WorkerApp', S.worker.name, false)}
+  <div class="content">
+    <h1>${labelize(s.Activity)}</h1>
+    <p class="lead">${esc(s.Bed_ID)} · ${esc(s.Crop_ID)} · ${esc(s.Cohort_ID)}</p>
+    <div class="card" style="text-align:center;">
+      <div class="timer">${elapsedDisplay(s)}</div>
+      <div class="timer-status">${paused ? '⏸ Paused' : '● Active'}${s.exceptionsLogged?` · ${s.exceptionsLogged} exception(s) reported`:''}</div>
+    </div>
+    ${paused
+      ? `<button class="btn btn-primary" onclick="resumeSession()">Resume</button>`
+      : `<button class="btn btn-warn" onclick="pauseSession()">Pause</button>`}
+    <button class="btn btn-outline" onclick="openModal('exception')">Report exception</button>
+    <button class="btn btn-danger" onclick="openCompleteModal()">Complete activity</button>
+  </div>`;
+}
+function openCompleteModal(){
+  if(S.activity==='IrrigationCheck') openModal('completeIrrigation');
+  else if(S.activity==='Scouting') openModal('completeScouting');
+  else if(S.activity==='Harvest') openModal('completeHarvest');
+  else openModal('completeGeneric');
+}
+
+function navbar(){
+  return `<div class="navbar">
+    <button class="navitem ${S.navTab==='field'?'active':''}" onclick="setNav('field')"><div class="dot"></div>Field</button>
+    <button class="navitem ${S.navTab==='logs'?'active':''}" onclick="setNav('logs')"><div class="dot"></div>Log</button>
+  </div>`;
+}
+
+function logsScreen(){
+  const t = S.tables;
+  function section(title, rows, renderRow){
+    return `<h2>${title} (${rows.length})</h2>
+    <div class="loglist">
+      ${rows.length ? rows.slice().reverse().slice(0,8).map(renderRow).join('') : `<div class="empty">Nothing logged yet.</div>`}
+    </div>`;
   }
+  return `
+  ${topbar('WorkerApp', S.worker.name, true)}
+  <div class="content">
+    <h1>Activity feed</h1>
+    <p class="lead">What this device has fed into FIELD_ACTIVITY_LOG, EXCEPTION_LOG and SCOUT_FINDING this session.</p>
+    ${section('Completed activity', t.activityLog, r=>`
+      <div class="logrow"><div class="t1">${labelize(r.Task_Type)} — ${esc(r.Bed_ID)}</div>
+      <div class="t2">${fmtTime(r.End_Time)} · ${esc(r.Duration)}${r.Quantity?(' · '+esc(r.Quantity)+' '+esc(r.Unit)):''}</div></div>`)}
+    ${section('Exceptions', t.exceptions, r=>`
+      <div class="logrow"><div class="t1">${esc(r.Exception_Type)} <span class="chip ${r.Severity==='CRITICAL'||r.Severity==='HIGH'?'chip-danger':'chip-warn'}" style="margin-left:6px;">${esc(r.Severity)}</span></div>
+      <div class="t2">${fmtTime(r.Timestamp)}${r.Irrigation_Zone_ID?(' · Zone '+esc(r.Irrigation_Zone_ID)):''}${r.Exception_Notes?(' · '+esc(r.Exception_Notes)):''}</div></div>`)}
+    ${section('Scouting findings', t.scouting, r=>`
+      <div class="logrow"><div class="t1">${esc(r.Domain)} — ${esc(r.Bed_ID)}</div>
+      <div class="t2">${fmtTime(r.Timestamp)} · ${esc(r.Severity)}${r.Requires_Action==='TRUE'?' · action required':''}</div></div>`)}
+    <button class="linkbtn" style="margin-top:8px;" onclick="if(confirm('Clear all demo data on this device?')){localStorage.removeItem('${STORE_KEY}');location.reload();}">Reset demo data</button>
+  </div>
+  ${navbar()}`;
+}
 
-  // Opens the scout finding form for whichever session is currently
-  // focused in the execution view. Resets the form to a blank state each
-  // time (rather than leaving stale values from a prior finding) since a
-  // single scouting pass commonly logs several distinct findings in a row.
-  function appOpenScoutFinding() {
-    document.getElementById('scout-lbl-bed').textContent = state.bedId;
-    document.getElementById('scout-lbl-activity').textContent = labelForActivity(state.selectedActivity);
-    renderScoutFormOptions(); // defensive re-populate in case taxonomy wasn't ready when the page first loaded
-    document.getElementById('scout-symptom').value = '';
-    document.getElementById('scout-location').value = '';
-    document.getElementById('scout-notes').value = '';
-    document.getElementById('scout-requires-action').checked = false;
-    clearScoutPhoto();
-    switchView('view-scout-finding');
-  }
+/* ---------- modals ---------- */
+function modalHTML(){
+  if(!S.modal) return '';
+  const m = S.modal;
+  let inner;
+  if(m==='exception') inner = exceptionModal();
+  else if(m==='completeGeneric') inner = completeGenericModal();
+  else if(m==='completeIrrigation') inner = completeIrrigationModal();
+  else if(m==='completeScouting') inner = completeScoutingModal();
+  else if(m==='completeHarvest') inner = completeHarvestModal();
+  return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet">${inner}</div></div>`;
+}
+function selectSeg(name, options, cur){
+  return `<div class="segbtns">${options.map(o=>`<button class="${cur===o?'active':''}" onclick="draft('${name}','${o}');render();">${o}</button>`).join('')}</div>`;
+}
 
-  function appSubmitScoutFinding() {
-    let domain = document.getElementById('scout-domain').value;
-    let symptom = document.getElementById('scout-symptom').value.trim();
-    let severity = document.getElementById('scout-severity').value;
-    if (!domain) return alert('Select a finding type.');
-    if (!symptom) return alert('Describe what you saw.');
-    if (!severity) return alert('Select a severity.');
+function exceptionModal(){
+  const d = S.modalDraft;
+  return `<div class="sheet-handle"></div>
+  <h2>Report exception</h2>
+  <div class="field"><label>Type</label>
+    ${selectSeg('type', [...SCOUT_DOMAINS,'Irrigation'], d.type)}
+  </div>
+  ${d.type==='Irrigation' ? `<div class="field"><label>Fault type</label>${selectSeg('fault', IRRIGATION_FAULTS, d.fault)}</div>` : ''}
+  <div class="field"><label>Severity</label>${selectSeg('severity', SEVERITIES, d.severity)}</div>
+  <div class="field"><label>Notes</label><textarea oninput="draft('notes',this.value)">${esc(d.notes)}</textarea></div>
+  <div class="field"><label>Photo URL (optional)</label><input oninput="draft('photo',this.value)" placeholder="https://..." value="${esc(d.photo)}"></div>
+  <button class="btn btn-primary" onclick="submitException()">Submit exception</button>
+  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
+}
+function completeGenericModal(){
+  const d = S.modalDraft;
+  return `<div class="sheet-handle"></div>
+  <h2>Complete: ${labelize(S.activity)}</h2>
+  <div class="field"><label>Quantity (optional)</label><input inputmode="decimal" oninput="draft('qty',this.value)" value="${esc(d.qty)}"></div>
+  <div class="field"><label>Unit (optional)</label><input oninput="draft('unit',this.value)" placeholder="e.g. beds, ft, trays" value="${esc(d.unit)}"></div>
+  <div class="field"><label>Notes (optional)</label><textarea oninput="draft('notes',this.value)">${esc(d.notes)}</textarea></div>
+  <button class="btn btn-danger" onclick="completeGeneric()">Complete session</button>
+  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
+}
+function completeIrrigationModal(){
+  const d = S.modalDraft;
+  return `<div class="sheet-handle"></div>
+  <h2>Irrigation check result</h2>
+  <div class="field"><label>Result</label>${selectSeg('result', ['PASS','FAIL'], d.result)}</div>
+  ${d.result==='FAIL' ? `<div class="field"><label>Fault type</label>${selectSeg('fault', IRRIGATION_FAULTS, d.fault)}</div>` : ''}
+  <div class="field"><label>Notes</label><textarea oninput="draft('notes',this.value)">${esc(d.notes)}</textarea></div>
+  <div class="field"><label>Photo URL (optional)</label><input oninput="draft('photo',this.value)" value="${esc(d.photo)}"></div>
+  <button class="btn ${d.result==='FAIL'?'btn-danger':'btn-primary'}" onclick="completeIrrigationCheck()">Complete session</button>
+  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
+}
+function completeScoutingModal(){
+  const d = S.modalDraft;
+  return `<div class="sheet-handle"></div>
+  <h2>Scouting finding</h2>
+  <div class="field"><label>Domain</label>${selectSeg('domain', SCOUT_DOMAINS, d.domain)}</div>
+  <div class="field"><label>Symptom</label><input oninput="draft('symptom',this.value)" value="${esc(d.symptom)}"></div>
+  <div class="field"><label>Severity</label>${selectSeg('severity', SEVERITIES, d.severity)}</div>
+  <div class="field"><label>Requires action?</label>${selectSeg('requiresAction', ['Yes','No'], d.requiresAction===true?'Yes':d.requiresAction===false?'No':undefined)}</div>
+  <div class="field"><label>Notes</label><textarea oninput="draft('notes',this.value)">${esc(d.notes)}</textarea></div>
+  <div class="field"><label>Photo URL (optional)</label><input oninput="draft('photo',this.value)" value="${esc(d.photo)}"></div>
+  <button class="btn btn-danger" onclick="draft('requiresAction', S.modalDraft.requiresAction==='Yes'); completeScouting()">Submit finding</button>
+  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
+}
+function completeHarvestModal(){
+  const d = S.modalDraft;
+  return `<div class="sheet-handle"></div>
+  <h2>Harvest quantity</h2>
+  <div class="field"><label>Quantity</label><input inputmode="decimal" oninput="draft('qty',this.value)" value="${esc(d.qty)}" placeholder="e.g. 12.5"></div>
+  <div class="field"><label>Unit</label>${selectSeg('unit', HARVEST_UNITS, d.unit)}</div>
+  <button class="btn btn-primary" onclick="completeHarvest()">Complete session</button>
+  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
+}
 
-    let payload = {
-      workerId: state.workerId,
-      sessionId: state.sessionId,
-      domain: domain,
-      symptom: symptom,
-      severity: severity,
-      locationDetail: document.getElementById('scout-location').value.trim(),
-      notes: document.getElementById('scout-notes').value.trim(),
-      requiresAction: document.getElementById('scout-requires-action').checked
-    };
-
-    if (state.findingPhotoBase64) {
-      payload.photoBase64 = state.findingPhotoBase64;
-      payload.photoMimeType = state.findingPhotoMime;
-    }
-
-    apiCall('log-scout-finding', payload, function(res) {
-      if (res && res.success) {
-        state.sessionFindings.push({
-          domain: domain,
-          domainLabel: state.scoutDomainLabels[domain] || domain,
-          symptom: symptom,
-          severity: severity,
-          locationDetail: payload.locationDetail,
-          requiresAction: payload.requiresAction
-        });
-        renderSessionFindings();
-
-        // Reset for the next finding but stay on this form -- scouting a
-        // bed thoroughly usually means logging several findings back to back.
-        document.getElementById('scout-symptom').value = '';
-        document.getElementById('scout-location').value = '';
-        document.getElementById('scout-notes').value = '';
-        document.getElementById('scout-requires-action').checked = false;
-        clearScoutPhoto();
-
-        alert(payload.requiresAction ? 'Finding logged and manager notified.' : 'Finding logged.');
-      } else {
-        alert(res && res.error ? res.error : 'Failed to log finding');
-      }
-    });
-  }
-
-  // Renders the running "logged this pass" recap in two places that share
-  // the same underlying state.sessionFindings: the collapsed summary on the
-  // execution view, and the fuller list at the bottom of the finding form
-  // itself. Client-side only, same posture as sessionTotes/renderToteLog --
-  // the SCOUT_FINDING rows themselves are already durable server-side the
-  // moment log-scout-finding succeeds.
-  function renderSessionFindings() {
-    let execList = document.getElementById('scout-finding-log-list');
-    let execTotal = document.getElementById('scout-finding-log-total');
-    let recapWrap = document.getElementById('scout-recap-wrap');
-    let recapList = document.getElementById('scout-finding-recap-list');
-    if (!execList || !execTotal) return;
-
-    execList.innerHTML = '';
-    if (recapList) recapList.innerHTML = '';
-
-    state.sessionFindings.forEach(function(f) {
-      let flagNote = f.requiresAction ? ' &middot; \u{1F6A9} flagged' : '';
-      let locNote = f.locationDetail ? ' &middot; ' + f.locationDetail : '';
-      let rowHtml =
-        '<div class="bed-result" style="cursor:default;">' +
-          '<div class="bed-id">' + f.domainLabel + ' <span class="badge ' + scoutSeverityBadgeClass(f.severity) + '">' + scoutSeverityLabel(f.severity) + '</span></div>' +
-          '<div class="bed-meta">' + f.symptom + locNote + flagNote + '</div>' +
-        '</div>';
-
-      let execRow = document.createElement('div');
-      execRow.innerHTML = rowHtml;
-      execList.appendChild(execRow.firstElementChild);
-
-      if (recapList) {
-        let recapRow = document.createElement('div');
-        recapRow.innerHTML = rowHtml;
-        recapList.appendChild(recapRow.firstElementChild);
-      }
-    });
-
-    execTotal.textContent = state.sessionFindings.length
-      ? (state.sessionFindings.length + ' finding(s) logged this pass.')
-      : '';
-    if (recapWrap) recapWrap.classList.toggle('hidden', state.sessionFindings.length === 0);
-  }
-
-  // Same downsample-free base64 read as handleExceptionPhotoSelect, kept as
-  // a separate buffer (state.findingPhotoBase64) so an in-progress
-  // exception photo and an in-progress finding photo never collide.
-  function handleScoutPhotoSelect(evt) {
-    let file = evt.target.files && evt.target.files[0];
-    let preview = document.getElementById('scout-photo-preview');
-    if (!file) { clearScoutPhoto(); return; }
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
-      evt.target.value = '';
-      return;
-    }
-    const MAX_BYTES = 8 * 1024 * 1024;
-    if (file.size > MAX_BYTES) {
-      alert('Photo is too large (max 8MB). Please choose a smaller image.');
-      evt.target.value = '';
-      return;
-    }
-
-    let reader = new FileReader();
-    reader.onload = function() {
-      let dataUrl = reader.result;
-      let commaIdx = dataUrl.indexOf(',');
-      state.findingPhotoBase64 = dataUrl.substring(commaIdx + 1);
-      state.findingPhotoMime = file.type;
-      preview.innerHTML =
-        '<img src="' + dataUrl + '" style="max-width:100%; border-radius:6px;">' +
-        '<button type="button" class="btn-secondary" style="margin-top:6px;" onclick="clearScoutPhoto()">Remove Photo</button>';
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function clearScoutPhoto() {
-    state.findingPhotoBase64 = '';
-    state.findingPhotoMime = '';
-    let input = document.getElementById('scout-photo');
-    if (input) input.value = '';
-    let preview = document.getElementById('scout-photo-preview');
-    if (preview) preview.innerHTML = '';
-  }
-
-  // Allows scanner hardware (which types the code then sends Enter) to
-  // trigger a scan without touching the "Process Scan" button.
-  function handleScanKeyPress(e) {
-    if (e.key === 'Enter') {
-      appScanQR();
-    }
-  }
-
-  // Scans a full QR string (e.g. "BED:B1-01") or a bare Bed_ID.
-  function appScanQR() {
-    let raw = document.getElementById('scan-qr-input').value.trim().toUpperCase();
-    if (!raw) return alert('Please enter or scan a QR code');
-
-    apiCall('scan-bed', { bedId: raw, workerId: state.workerId }, function(res) {
-      if (res && res.success) {
-        state.bedId = res.bed.bedId;
-        state.cohortId = res.bed.cohortId;
-        state.crop = res.bed.crop; // raw Crop_ID code, kept in state in case anything downstream needs it
-        state.bedState = res.bed.bedState || ''; // needed by updatePlantingGateWarning below
-
-        // Reset any crop choice left over from a previously scanned bed
-        // (2026-09-05) -- also clears the <select>'s options so
-        // renderPlantingGateCropSelect_ rebuilds them fresh rather than
-        // reusing a stale, already-populated list from the last bed.
-        state.newPlantingCropId = '';
-        let cropSelectEl = document.getElementById('planting-gate-crop-select');
-        if (cropSelectEl) cropSelectEl.innerHTML = '';
-
-        document.getElementById('lbl-bed-id').textContent = state.bedId;
-        document.getElementById('lbl-block').textContent = res.bed.block || '-';
-        // 2026-09-08 (Rules-to-Events engine, verification pass): added the
-        // cropNameFromPicklist_ fallback between res.bed.cropName and the
-        // raw code. handleScanQr_ should always attach cropName -- but a
-        // cohort minted via PCB's new dispatch-planting-event path is one
-        // more write path than existed before, so this is a defensive
-        // second lookup (against the crop picklist already loaded by
-        // loadCropPicklist()) rather than a trust that every deployment's
-        // handleScanQr_ has caught up. Never falls back to a raw code like
-        // "SUK" while ANY crop-name source has the answer.
-        document.getElementById('lbl-crop').textContent = res.bed.cropName || cropNameFromPicklist_(state.crop) || state.crop;
-        document.getElementById('lbl-bed-state').textContent = res.bed.bedState || '-';
-
-        // Irrigation zone -- shown inline next to Block; hidden entirely for
-        // a bed with no zone assigned rather than showing "Zone -".
-        let zoneEl = document.getElementById('row-zone');
-        if (res.bed.irrigationZone) {
-          zoneEl.classList.remove('hidden');
-          document.getElementById('lbl-zone').textContent = res.bed.irrigationZone;
-        } else {
-          zoneEl.classList.add('hidden');
-        }
-
-        // Only show the raw code chip when it actually differs from the
-        // display name -- avoids a redundant "Eggplant (Eggplant)" if
-        // CROP_REFERENCE ever stores the full name as the code too.
-        let cropCodeEl = document.getElementById('lbl-crop-code');
-        cropCodeEl.textContent = (res.bed.cropName && res.bed.cropName !== state.crop) ? state.crop : '';
-
-        document.getElementById('lbl-cohort-id').textContent = state.cohortId;
-        updatePlantingGateWarning();
-
-        // Variety/Stage and Bed Target only apply to beds with an assigned
-        // cohort -- hide those rows entirely for unplanted/general-use beds
-        // rather than showing "-" placeholders that look like missing data.
-        let cohort = res.bed.cohort;
-        let varietyRow = document.getElementById('row-variety-stage');
-        let targetRow = document.getElementById('row-bed-target');
-        let stageDayRow = document.getElementById('row-stage-day');
-        let plantedRow = document.getElementById('row-planted');
-        let harvestRow = document.getElementById('row-harvest-est');
-        if (cohort) {
-          varietyRow.classList.remove('hidden');
-          targetRow.classList.remove('hidden');
-          document.getElementById('lbl-variety-stage').textContent = cohort.variety || '-';
-          document.getElementById('lbl-bed-target').textContent =
-            (cohort.targetQtyLbs !== null && cohort.targetQtyLbs !== undefined) ? cohort.targetQtyLbs + ' lbs' : '-';
-
-          // Stage · Day N -- only meaningful once the cohort has an actual
-          // planting date; a cohort still in nursery/pre-plant shows just the
-          // stage with no day count rather than a misleading "Day NaN".
-          let dayNum = cohort.actualPlantingDate ? daysBetween_(cohort.actualPlantingDate, new Date()) : null;
-          if (cohort.stage) {
-            stageDayRow.classList.remove('hidden');
-            document.getElementById('lbl-stage-day').textContent =
-              cohort.stage + (dayNum !== null && dayNum >= 0 ? ' \u00b7 Day ' + (dayNum + 1) : '');
-          } else {
-            stageDayRow.classList.add('hidden');
-          }
-
-          if (cohort.actualPlantingDate) {
-            plantedRow.classList.remove('hidden');
-            document.getElementById('lbl-planted').textContent = fmtDateOnly(cohort.actualPlantingDate);
-          } else {
-            plantedRow.classList.add('hidden');
-          }
-
-          if (cohort.expectedHarvestDate) {
-            harvestRow.classList.remove('hidden');
-            let remaining = daysBetween_(new Date().toISOString(), new Date(cohort.expectedHarvestDate));
-            let remainingTxt = (remaining === null) ? ''
-              : remaining > 0 ? ' (' + remaining + ' days remaining)'
-              : remaining === 0 ? ' (today)'
-              : ' (' + Math.abs(remaining) + ' days overdue)';
-            document.getElementById('lbl-harvest-est').textContent = 'Est. ' + fmtDateOnly(cohort.expectedHarvestDate) + remainingTxt;
-          } else {
-            harvestRow.classList.add('hidden');
-          }
-        } else {
-          varietyRow.classList.add('hidden');
-          targetRow.classList.add('hidden');
-          stageDayRow.classList.add('hidden');
-          plantedRow.classList.add('hidden');
-          harvestRow.classList.add('hidden');
-        }
-
-        // Bed history (recent activity, latest scout finding, unresolved
-        // exceptions, last irrigation) -- from getBedHistory() via
-        // scan-bed's response. Collapsed by default so it doesn't get in
-        // the way of the primary "confirm and start task" flow; comes
-        // back empty until real activity/irrigation rows exist.
-        renderBedHistory(res.history);
-        document.getElementById('bed-history-body').classList.add('hidden');
-        document.getElementById('bed-history-toggle').textContent = '▸ Bed History';
-
-        switchView('view-select-task');
-      } else {
-        alert('Scan failed: ' + (res.error || 'Unknown code'));
-      }
-    });
-  }
-
-  function toggleBedHistory() {
-    let body = document.getElementById('bed-history-body');
-    let toggle = document.getElementById('bed-history-toggle');
-    let isHidden = body.classList.contains('hidden');
-    body.classList.toggle('hidden');
-    toggle.textContent = (isHidden ? '▾' : '▸') + ' Bed History';
-  }
-
-  // history = { recentActivities, latestScoutFinding, unresolvedExceptions,
-  // lastIrrigation } from getBedHistory() (VPOS_bed_history_patch.gs).
-  // Defensive throughout -- a bed with no history yet, or a scan-bed call
-  // from an older backend version without the history field, should just
-  // show empty groups rather than break the Confirm Assignment screen.
-  function renderBedHistory(history) {
-    let container = document.getElementById('bed-history-body');
-    container.innerHTML = '';
-    history = history || {};
-
-    let activities = history.recentActivities || [];
-    let scout = history.latestScoutFinding;
-    let exceptions = history.unresolvedExceptions || [];
-    let irrigation = history.lastIrrigation;
-
-    if (activities.length === 0 && !scout && exceptions.length === 0 && !irrigation) {
-      container.innerHTML = '<div class="empty-state">No history logged for this bed yet.</div>';
-      return;
-    }
-
-    let html = '';
-
-    if (exceptions.length > 0) {
-      html += '<div class="bh-group-label">Unresolved Exceptions</div>';
-      exceptions.forEach(function(ex) {
-        html += '<div class="bh-row bh-exception">' +
-          '<div class="bh-row-top"><span class="bh-title">' + (ex.Exception_Type || 'Exception') + '</span>' +
-          '<span class="badge ' + scoutSeverityBadgeClass(ex.Severity) + '">' + scoutSeverityLabel(ex.Severity) + '</span></div>' +
-          (ex.Notes ? '<div>' + ex.Notes + '</div>' : '') +
-          '<div class="bh-meta">' + fmtBedHistoryTime(ex.Reported_At) + '</div>' +
-        '</div>';
-      });
-    }
-
-    if (scout) {
-      html += '<div class="bh-group-label">Latest Scout Finding</div>';
-      html += '<div class="bh-row">' +
-        '<div class="bh-row-top"><span class="bh-title">' + (scout.Domain || '-') + (scout.Symptom ? ': ' + scout.Symptom : '') + '</span>' +
-        '<span class="badge ' + scoutSeverityBadgeClass(scout.Severity) + '">' + scoutSeverityLabel(scout.Severity) + '</span></div>' +
-        (scout.Notes ? '<div>' + scout.Notes + '</div>' : '') +
-        '<div class="bh-meta">' + fmtBedHistoryTime(scout.Timestamp) + '</div>' +
-      '</div>';
-    }
-
-    if (activities.length > 0) {
-      html += '<div class="bh-group-label">Recent Activity</div>';
-      activities.forEach(function(a) {
-        let isStateChange = a.Activity_Type === 'COHORT_STATE_CHANGE';
-        let d = a.details || {};
-        let meta = isStateChange
-          ? ((d.from || '?') + ' \u2192 ' + (d.to || '?'))
-          : [
-              (d.elapsed_minutes !== undefined ? d.elapsed_minutes + ' min' : ''),
-              (d.logged_quantity !== undefined ? d.logged_quantity + (d.unit ? ' ' + d.unit : '') : '')
-            ].filter(Boolean).join(' \u00b7 ');
-        let title = isStateChange ? 'Cohort State Change' : labelForActivity(a.Activity_Type);
-        html += '<div class="bh-row">' +
-          '<div class="bh-row-top"><span class="bh-title">' + title + '</span>' +
-          '<span class="bh-meta">' + (a.Worker_ID || '') + '</span></div>' +
-          (meta ? '<div class="bh-meta">' + meta + '</div>' : '') +
-          '<div class="bh-meta">' + fmtBedHistoryTime(a.Timestamp) + '</div>' +
-        '</div>';
-      });
-    }
-
-    if (irrigation) {
-      html += '<div class="bh-group-label">Last Irrigation</div>';
-      html += '<div class="bh-row">' +
-        '<div class="bh-row-top"><span class="bh-title">' + (irrigation.Trigger_Type || 'Irrigation') + '</span>' +
-        '<span class="bh-meta">' + (irrigation.Status || '') + '</span></div>' +
-        '<div class="bh-meta">' +
-          (irrigation.Duration_Minutes !== undefined && irrigation.Duration_Minutes !== '' ? irrigation.Duration_Minutes + ' min' : '') +
-          (irrigation.Actual_PSI !== undefined && irrigation.Actual_PSI !== '' ? ' \u00b7 ' + irrigation.Actual_PSI + ' PSI' : '') +
-        '</div>' +
-        '<div class="bh-meta">' + fmtBedHistoryTime(irrigation.Timestamp) + '</div>' +
-      '</div>';
-    }
-
-    container.innerHTML = html;
-  }
-
-  function fmtBedHistoryTime(ts) {
-    if (!ts) return '';
-    let d = new Date(ts);
-    return isNaN(d.getTime()) ? '' : d.toLocaleString();
-  }
-
-  // Date-only formatting + day-math for the Bed Snapshot's Stage/Planted/
-  // Harvest lines. Both cohort dates arrive as ISO strings (or '') from
-  // handleScanQr_ -- never assume they're present, since an unplanted cohort
-  // legitimately has no Actual_Planting_Date yet.
-  function fmtDateOnly(iso) {
-    if (!iso) return '';
-    let d = new Date(iso);
-    return isNaN(d.getTime()) ? '' : d.toLocaleDateString();
-  }
-  function daysBetween_(fromIso, toDate) {
-    let from = new Date(fromIso);
-    if (isNaN(from.getTime())) return null;
-    let msPerDay = 24 * 60 * 60 * 1000;
-    // Compare calendar days, not exact 24h windows, so "planted this
-    // morning" reads as Day 1 all day rather than Day 0 until the next
-    // clock-exact hour.
-    let fromDay = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-    let toDay = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
-    return Math.round((toDay - fromDay) / msPerDay);
-  }
-
-  // Finds the first activity id in the loaded taxonomy whose id or label
-  // contains any of the given keywords (case-insensitive). Returns '' if
-  // nothing matches -- callers must handle that (taxonomy not loaded yet, or
-  // this ranch's taxonomy just doesn't have that activity type).
-  function findActivityIdForKeywords_(keywords) {
-    for (let group in state.taxonomyGroups) {
-      let ids = state.taxonomyGroups[group] || [];
-      for (let i = 0; i < ids.length; i++) {
-        let id = ids[i];
-        let label = labelForActivity(id);
-        let haystack = (id + ' ' + label).toLowerCase();
-        for (let k = 0; k < keywords.length; k++) {
-          if (haystack.indexOf(keywords[k].toLowerCase()) !== -1) return id;
-        }
-      }
-    }
-    return '';
-  }
-
-  // Field Actions quick-launch buttons -- stages an activity and shows a
-  // brief confirm modal, then hands off to the existing appStartSession()
-  // pipeline exactly as if the worker had picked it from the dropdown and
-  // tapped "Start Task". No separate write path, no bypassing the timer.
-  function quickLaunch(key) {
-    let config = QUICK_ACTIONS[key];
-    if (!config) return;
-    let activityId = findActivityIdForKeywords_(config.keywords);
-    if (!activityId) {
-      return alert('"' + config.label + '" isn\'t set up in this ranch\'s activity list yet -- use "Or Choose Any Activity" below instead.');
-    }
-    state.pendingQuickActivity = activityId;
-    document.getElementById('ql-modal-title').textContent = 'Start ' + labelForActivity(activityId) + ' on Bed ' + state.bedId + '?';
-    document.getElementById('ql-modal-bed').textContent = 'Bed: ' + state.bedId;
-    document.getElementById('ql-modal-cohort').textContent = 'Cohort: ' + (state.cohortId || '-');
-    document.getElementById('quick-launch-overlay').classList.remove('hidden');
-  }
-
-  function cancelQuickLaunch() {
-    state.pendingQuickActivity = '';
-    document.getElementById('quick-launch-overlay').classList.add('hidden');
-  }
-
-  function confirmQuickLaunch() {
-    let dropdown = document.getElementById('activity-select-dropdown');
-    if (dropdown && state.pendingQuickActivity) {
-      dropdown.value = state.pendingQuickActivity;
-      updateHarvestPlanVisibility();
-      updatePlantingGateWarning();
-    }
-    document.getElementById('quick-launch-overlay').classList.add('hidden');
-    appStartSession();
-  }
-
-  function appStartSession() {
-    let dropdown = document.getElementById('activity-select-dropdown');
-    if (!dropdown) return alert('Activity list not loaded yet -- try rescanning.');
-    state.selectedActivity = dropdown.value;
-
-    // Belt-and-suspenders re-check of the planting gate (2026-09-05) --
-    // updatePlantingGateWarning already disables Start Task in this state,
-    // but this guards against a stale/disabled-attribute edge case rather
-    // than silently sending start-session with no crop for the backend to
-    // mint a cohort from.
-    let plantingTypes = state.plantingActivityTypes || [];
-    let unassignedStates = state.bedUnassignedStates || [];
-    let needsCropPick = plantingTypes.indexOf(state.selectedActivity) !== -1 &&
-      unassignedStates.indexOf(state.bedState) !== -1;
-    if (needsCropPick && !state.newPlantingCropId) {
-      return alert('Select a crop before starting ' + labelForActivity(state.selectedActivity) + ' on this bed.');
-    }
-
-    let payload = {
-      workerId: state.workerId,
-      bedId: state.bedId,
-      cohortId: state.cohortId,
-      activity: state.selectedActivity
-    };
-    if (needsCropPick) {
-      payload.newPlantingCropId = state.newPlantingCropId;
-    }
-
-    // Optional harvest-plan window -- only ever sent when Harvest is
-    // selected and the worker opted into it; every other activity keeps
-    // starting exactly as before (plannedFlag defaults false server-side).
-    let planCheck = document.getElementById('harvest-plan-check');
-    if (state.selectedActivity === 'Harvest' && planCheck && planCheck.checked) {
-      let startVal = document.getElementById('harvest-plan-start').value;
-      let endVal = document.getElementById('harvest-plan-end').value;
-      if (!startVal || !endVal) {
-        return alert('Enter both a planned start and end time, or uncheck the planned-harvest option.');
-      }
-      let startDate = new Date(startVal);
-      let endDate = new Date(endVal);
-      if (endDate <= startDate) {
-        return alert('Planned end must be after planned start.');
-      }
-      payload.plannedFlag = true;
-      payload.plannedStart = startDate.toISOString();
-      payload.plannedEnd = endDate.toISOString();
-    }
-
-    // Starting a new task no longer touches or is blocked by any of this
-    // worker's other open sessions -- it just logs independently. This
-    // sessionId becomes the "focused" session for the execution view that
-    // follows, but any others keep running untouched in the background.
-    apiCall('start-session', payload, function(res) {
-      if (res && res.success) {
-        state.sessionId = res.sessionId;
-        document.getElementById('exec-bed').textContent = state.bedId;
-        document.getElementById('exec-task').textContent = labelForActivity(state.selectedActivity);
-        document.getElementById('exec-start').textContent = new Date(res.startTime).toLocaleTimeString();
-        let statusLbl = document.getElementById('lbl-status');
-        statusLbl.className = 'badge badge-active';
-        statusLbl.textContent = 'ACTIVE';
-        state.sessionTotes = [];
-        state.sessionFindings = [];
-        renderToteLog();
-        renderSessionFindings();
-        updateHarvestSectionVisibility();
-        updateScoutSectionVisibility();
-        switchView('view-execution');
-      } else {
-        alert(res.error || 'Failed to start session');
-      }
-    });
-  }
-
-  // Completes whichever session is currently focused in the execution view.
-  // Any other open sessions for this worker are untouched and still listed
-  // on the hub afterward.
-  function appCompleteSession() {
-    let quantity = 0;
-    if (state.selectedActivity === 'Harvest') {
-      // Prefill with the running total from any totes logged this visit --
-      // still fully editable/confirmable by the worker, and still falls
-      // back to a blank '0' prompt if no totes were logged (e.g. a Harvest
-      // session that just used the old single quantity-at-completion flow).
-      let defaultQty = state.sessionTotes.reduce(function(sum, t) { return sum + (Number(t.netWeightLbs) || 0); }, 0);
-      quantity = prompt('Enter harvested quantity (lbs):', defaultQty ? defaultQty.toFixed(1) : '0');
-    }
-
-    apiCall('complete-session', { sessionId: state.sessionId, quantity: quantity }, function(res) {
-      if (res && res.success) {
-        alert('Activity completed. Duration: ' + res.elapsedMinutes + ' mins');
-        resetBedSearch();
-        loadMySessions();
-      }
-    });
-  }
-
-  function resetBedSearch() {
-    var input = document.getElementById('bed-search-input');
-    var results = document.getElementById('bed-search-results');
-    if (input) input.value = '';
-    if (results) results.innerHTML = '';
-  }
-
-  // Pauses whichever session is currently focused in the execution view and
-  // returns to the "My Active Sessions" hub, where it'll show up as PAUSED
-  // (labeled with the chosen pauseType) alongside any other open sessions --
-  // tapping it there resumes it. pauseType is one of BREAK / LUNCH /
-  // END_OF_DAY -- purely descriptive of worker intent, doesn't change the
-  // elapsed-time math on the backend at all.
-  function appPauseAndExit(pauseType) {
-    apiCall('pause-session', { sessionId: state.sessionId, pauseType: pauseType }, function(res) {
-      if (res && res.success) {
-        resetBedSearch();
-        loadMySessions();
-      } else {
-        alert(res && res.error ? res.error : 'Pause failed');
-      }
-    });
-  }
-
-  function appReportExceptionPrompt() {
-    switchView('view-exception');
-  }
-
-  function appSubmitException() {
-    let payload = {
-      workerId: state.workerId,
-      sessionId: state.sessionId,
-      exceptionType: document.getElementById('exc-type').value,
-      severity: document.getElementById('exc-severity').value,
-      notes: document.getElementById('exc-notes').value
-    };
-
-    if (state.exceptionPhotoBase64) {
-      payload.photoBase64 = state.exceptionPhotoBase64;
-      payload.photoMimeType = state.exceptionPhotoMime;
-    }
-
-    apiCall('report-exception', payload, function(res) {
-      if (res && res.success) {
-        alert('Exception logged and manager notified.');
-        document.getElementById('exc-notes').value = '';
-        clearExceptionPhoto();
-        document.getElementById('lbl-status').className = 'badge badge-danger';
-        document.getElementById('lbl-status').textContent = 'ALERT';
-        switchView('view-execution');
-      } else {
-        alert(res && res.error ? res.error : 'Failed to submit exception');
-      }
-    });
-  }
-
-  restoreSessionOnLoad();
+/* ---------- boot + ticking timer ---------- */
+render();
+setInterval(()=>{ if(S.session && S.session.Session_Status==='ACTIVE'){ const el=document.querySelector('.timer'); if(el) el.textContent = elapsedDisplay(S.session); } }, 1000);
 </script>
 </body>
 </html>
