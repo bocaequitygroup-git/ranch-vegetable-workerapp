@@ -3,560 +3,245 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>WorkerApp — Ngapori Ranch</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>VPOS Worker</title>
 <style>
-:root{
-  --forest:#1F3A2E; --forest-dark:#14261D;
-  --sand:#F5F1E6; --paper:#FFFFFF; --ink:#1B1B18; --ink-soft:#5B5A52;
-  --line:#DCD5C4;
-  --ok:#2E7D32; --warn:#C77700; --danger:#B3261E; --irrigation:#C9622A;
-  --accent:#1F3A2E;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --sand:#15181A; --paper:#1E2320; --ink:#EDEAE0; --ink-soft:#A9A79A; --line:#33372F;
-  }
-}
-:root[data-theme="dark"]{
-  --sand:#15181A; --paper:#1E2320; --ink:#EDEAE0; --ink-soft:#A9A79A; --line:#33372F;
-}
-html{scroll-padding-top:env(safe-area-inset-top,0px);}
-*{box-sizing:border-box;}
-html,body{height:100%;}
-body{
-  margin:0; background:var(--sand); color:var(--ink);
-  font-family:'Archivo',system-ui,-apple-system,Segoe UI,sans-serif;
-  -webkit-font-smoothing:antialiased;
-}
-#app{
-  max-width:480px; margin:0 auto; min-height:100vh;
-  display:flex; flex-direction:column; background:var(--sand);
-}
-.topbar{
-  position:sticky; top:0; z-index:10; background:var(--forest); color:#fff;
-  padding:calc(14px + env(safe-area-inset-top,0px)) 18px 14px;
-  display:flex; align-items:center; justify-content:space-between;
-}
-.topbar .brand{font-weight:800; font-size:15px; letter-spacing:.02em;}
-.topbar .sub{font-size:11px; color:#C9D6CD; margin-top:1px;}
-.topbar button{background:none;border:none;color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 10px;}
-.content{flex:1; padding:18px 18px 90px;}
-h1{font-size:22px; font-weight:800; margin:0 0 4px; letter-spacing:-.01em;}
-h2{font-size:15px; font-weight:700; margin:0 0 10px;}
-p.lead{color:var(--ink-soft); font-size:14px; margin:0 0 20px; line-height:1.5;}
-.field{margin-bottom:14px;}
-.field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
-input,select,textarea{
-  width:100%; padding:13px 14px; border:1.5px solid var(--line); border-radius:10px;
-  font-family:inherit; font-size:16px; background:var(--paper); color:var(--ink);
-}
-textarea{resize:vertical; min-height:70px;}
-.btn{
-  display:block; width:100%; text-align:center; padding:15px; border-radius:12px;
-  font-family:inherit; font-size:15px; font-weight:700; border:none; cursor:pointer;
-  margin-bottom:10px;
-}
-.btn-primary{background:var(--forest); color:#fff;}
-.btn-primary:active{background:var(--forest-dark);}
-.btn-outline{background:transparent; color:var(--forest); border:1.5px solid var(--forest);}
-.btn-danger{background:var(--danger); color:#fff;}
-.btn-warn{background:var(--warn); color:#fff;}
-.btn-ghost{background:transparent; color:var(--ink-soft); font-weight:600;}
-.btn:disabled{opacity:.45; cursor:not-allowed;}
-.card{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px;}
-.card .row{display:flex; justify-content:space-between; font-size:13px; padding:5px 0;}
-.card .row span:first-child{color:var(--ink-soft);}
-.card .row span:last-child{font-weight:700; text-align:right;}
-.chip{display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.02em;}
-.chip-ok{background:#E4F1E5; color:var(--ok);}
-.chip-warn{background:#FBEBD6; color:var(--warn);}
-.chip-danger{background:#F7DEDB; color:var(--danger);}
-.chip-irr{background:#FBE4D4; color:var(--irrigation);}
-:root[data-theme="dark"] .chip-ok,:root:not([data-theme="light"]) .chip-ok{background:#1E3320;}
-:root[data-theme="dark"] .chip-warn,:root:not([data-theme="light"]) .chip-warn{background:#3A2A10;}
-:root[data-theme="dark"] .chip-danger,:root:not([data-theme="light"]) .chip-danger{background:#3A1D1B;}
-:root[data-theme="dark"] .chip-irr,:root:not([data-theme="light"]) .chip-irr{background:#3A2515;}
-.activity-btn{
-  display:flex; align-items:center; justify-content:space-between; width:100%;
-  padding:16px; margin-bottom:10px; border-radius:12px; border:1.5px solid var(--line);
-  background:var(--paper); font-family:inherit; font-size:15px; font-weight:700; color:var(--ink);
-  cursor:pointer; text-align:left;
-}
-.activity-btn:active{border-color:var(--forest);}
-.activity-btn .tag{font-size:11px; font-weight:600; color:var(--ink-soft);}
-.timer{
-  font-size:52px; font-weight:800; text-align:center; letter-spacing:-.02em;
-  padding:24px 0 10px; font-variant-numeric:tabular-nums;
-}
-.timer-status{text-align:center; font-size:13px; font-weight:700; color:var(--ink-soft); margin-bottom:18px; text-transform:none;}
-.quickcodes{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px;}
-.quickcode{padding:8px 12px; border-radius:9px; border:1.5px dashed var(--line); background:transparent; font-family:inherit; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer;}
-.error{background:#F7DEDB; color:var(--danger); padding:11px 14px; border-radius:10px; font-size:13px; font-weight:600; margin-bottom:14px;}
-.toast{
-  position:fixed; left:50%; bottom:calc(30px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%);
-  background:var(--ink); color:var(--sand); padding:12px 20px; border-radius:999px; font-size:13.5px; font-weight:600;
-  z-index:100; box-shadow:0 8px 24px rgba(0,0,0,.25); max-width:88%; text-align:center;
-}
-.overlay{position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:50; display:flex; align-items:flex-end;}
-.sheet{
-  background:var(--sand); width:100%; max-width:480px; margin:0 auto; border-radius:20px 20px 0 0;
-  padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px)); max-height:88vh; overflow-y:auto;
-}
-.sheet-handle{width:36px; height:4px; background:var(--line); border-radius:99px; margin:0 auto 16px;}
-.segbtns{display:flex; gap:8px; margin-bottom:14px;}
-.segbtns button{flex:1; padding:11px; border-radius:9px; border:1.5px solid var(--line); background:var(--paper); font-family:inherit; font-weight:700; font-size:13px; color:var(--ink); cursor:pointer;}
-.segbtns button.active{background:var(--forest); color:#fff; border-color:var(--forest);}
-.navbar{
-  position:fixed; bottom:0; left:0; right:0; z-index:10;
-  background:var(--paper); border-top:1px solid var(--line);
-  padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
-  display:flex; justify-content:space-around; max-width:480px; margin:0 auto;
-}
-.navitem{background:none; border:none; font-family:inherit; color:var(--ink-soft); font-size:11px; font-weight:700; text-align:center; cursor:pointer; padding:4px 8px;}
-.navitem .dot{width:8px;height:8px;border-radius:50%; margin:0 auto 4px; background:var(--line);}
-.navitem.active{color:var(--forest);}
-.navitem.active .dot{background:var(--forest);}
-.loglist{display:flex; flex-direction:column; gap:8px;}
-.logrow{background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12.5px;}
-.logrow .t1{font-weight:700; margin-bottom:2px;}
-.logrow .t2{color:var(--ink-soft);}
-.empty{text-align:center; color:var(--ink-soft); font-size:13.5px; padding:40px 10px;}
-.kpad{display:none;}
-.linkbtn{background:none;border:none;color:var(--forest);font-family:inherit;font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;padding:0;}
+:root{--bg:#0e1512;--card:#16211c;--line:#2a3a32;--ink:#eef5f0;--sub:#9db3a6;--accent:#5fd48a;--warn:#e0a53d;--bad:#e3584f;--ok:#3fae6c;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f4f7f4;--card:#fff;--line:#dde5df;--ink:#16211c;--sub:#57685e}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit}
+.app{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.top{position:sticky;top:0;padding-top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top,0px)) 2px 10px}
+.brand{font-weight:800;font-size:18px;letter-spacing:.3px}
+.status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);border:1px solid var(--line);padding:5px 10px;border-radius:20px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--sub)}
+.dot.on{background:var(--ok)} .dot.off{background:var(--bad)} .dot.sync{background:var(--warn)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+h1{font-size:22px;margin:6px 0 2px} h2{font-size:16px;margin:0 0 10px;color:var(--sub);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.sub{color:var(--sub);font-size:13px;margin:0 0 14px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:14px;font-size:16px;margin-bottom:10px}
+textarea{min-height:70px;resize:vertical}
+.btn{display:block;width:100%;text-align:center;padding:16px;border-radius:14px;border:none;font-weight:700;font-size:16px;cursor:pointer;min-height:52px}
+.btn.primary{background:var(--accent);color:#06231a}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.bad{background:var(--bad);color:#fff} .btn.warn{background:var(--warn);color:#211a04}
+.btn:active{transform:scale(.98)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pin{display:flex;gap:8px;justify-content:center;margin:14px 0}
+.pin span{width:44px;height:52px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--bg)}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.keys button{padding:18px 0;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:20px;font-weight:700;min-height:56px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 14px;text-align:left;min-height:96px}
+.tile b{display:block;font-size:15px;margin-bottom:4px} .tile span{color:var(--sub);font-size:12px}
+.tile .ic{font-size:26px}
+.banner{background:linear-gradient(135deg,#1c3327,var(--card));border:1px solid var(--ok);border-radius:16px;padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.timerNum{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+.nav{display:flex;gap:8px;margin-bottom:12px}
+.nav button{flex:1;background:transparent;border:none;color:var(--sub);font-weight:700;padding:8px;border-bottom:3px solid transparent}
+.nav button.active{color:var(--ink);border-color:var(--accent)}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;background:var(--bg);border:1px solid var(--line);color:var(--sub);margin:2px 4px 2px 0}
+.pill.sel{background:var(--accent);color:#06231a;border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap}
+.toast{position:fixed;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--card);border:1px solid var(--ok);color:var(--ink);padding:14px 16px;border-radius:14px;max-width:480px;margin:0 auto;box-shadow:0 6px 20px rgba(0,0,0,.3);z-index:50;transition:transform .25s,opacity .25s}
+.toast.hide{transform:translateY(20px);opacity:0;pointer-events:none}
+.hidden{display:none!important}
+.logitem{border-bottom:1px solid var(--line);padding:10px 0;font-size:13px;color:var(--sub)}
+.logitem b{color:var(--ink)}
+a.link{color:var(--accent);font-size:13px}
+video{width:100%;border-radius:12px;background:#000;margin-bottom:10px}
 </style>
 </head>
 <body>
-<div id="app"></div>
-
+<div class="app" id="app"></div>
+<div class="toast hide" id="toast"></div>
 <script>
-/* ---------- mock reference data (stands in for CROP_ZONING_REFERENCE / BED_MASTER / USERS) ---------- */
-const USERS = [
-  {id:'USR-WORKER1', pin:'1234', name:'Jo Lindqvist'}
-];
-const BEDS = {
-  'B1-17': {block:'Block 1', zone:'Zone A', cohort:'MCH-C01', crop:'Mesclun Mix', activities:['IrrigationCheck','Weeding','Harvest','Scouting']},
-  'B2-04': {block:'Block 2', zone:'Zone B', cohort:'LET-C03', crop:'Butterhead Lettuce', activities:['Transplant','Scouting','IrrigationCheck']},
-  'B3-11': {block:'Block 3', zone:'Zone C', cohort:'RAD-C02', crop:'Radish', activities:['DirectSeed','BedPrep','IrrigationCheck','PestControl']},
-  'B4-09': {block:'Block 4', zone:'Zone A', cohort:'KAL-C01', crop:'Curly Kale', activities:['Harvest','Fertilizing','DiseaseControl','Scouting']}
-};
-const IRRIGATION_FAULTS = ['LEAK','BLOWOUT','CLOG','DRY_SPOT','LOW_PRESSURE','HIGH_PRESSURE'];
-const SCOUT_DOMAINS = ['PlantCondition','PestPressure','DiseasePressure','SoilWater','WeedCompetition'];
-const SEVERITIES = ['LOW','MEDIUM','HIGH','CRITICAL'];
-const HARVEST_UNITS = ['lb','kg','each','bunches'];
+const STATE={worker:null,pin:'',screen:'login',tab:'home',timer:null,timerStart:0,timerBed:null,timerAct:null,queue:JSON.parse(localStorage.getItem('vpos_queue')||'[]'),history:JSON.parse(localStorage.getItem('vpos_history')||'[]'),online:navigator.onLine,syncing:false,scanning:false};
+const ROSTER={"lisa":{pin:"1234",name:"Lisa Griffin"},"james":{pin:"1234",name:"James Clay"},"jon":{pin:"1234",name:"Jon Creem"},"linda":{pin:"1234",name:"Linda May"},"jessica":{pin:"1234",name:"Jessica Luka"}};
+// Sourced from the USERS tab (Role=Worker, Status=ACTIVE). All workers currently share PIN 1234 per Ranch policy.
+function findWorker(id){const k=Object.keys(ROSTER).find(w=>w.toLowerCase()===String(id).toLowerCase());return k?{id:k,...ROSTER[k]}:null;}
+const CROPS=["MUS Mustard Greens","SUK Sukuma Wiki","BET Beets","CAR Carrots","TOM Tomatoes","OKR Okra","LET Lettuce","KAL Kale","BTL Bitter Leaf","MCH Mchicha"];
+const ACTS=["Weeding","Transplanting","Scouting","Irrigation Maintenance","Harvest Prep","Bed Prep","Pest Control"];
+const EXC=[["Pest Pressure","\u{1F41B}"],["Plant Condition / Wilting","\u{1F343}"],["Irrigation Fault","\u{1F4A7}"],["Other","\u26A0\uFE0F"]];
+let db=null,dl=null;
+try{claude.use("db").then(d=>{db=d;setStatus(navigator.onLine?'on':'off')});}catch(e){}
+try{claude.use("downloads").then(d=>{dl=d;});}catch(e){}
+window.addEventListener('online',()=>{STATE.online=true;flushQueue();});
+window.addEventListener('offline',()=>{STATE.online=false;setStatus('off');});
 
-/* ---------- persisted state (per-viewer only; this is a demo data layer, not the real Sheets backend) ---------- */
-const STORE_KEY = 'workerapp_state_v1';
-function loadState(){
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hide');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.add('hide'),2400);}
+function setStatus(s){STATE._status=s;render();}
+function fmt(n){return String(n).padStart(2,'0')}
+function elapsed(){const s=Math.floor((Date.now()-STATE.timerStart)/1000);return fmt(Math.floor(s/3600))+':'+fmt(Math.floor(s/60)%60)+':'+fmt(s%60);}
+
+async function saveDoc(col,data){
+  const doc={...data,ts:new Date().toISOString(),worker:STATE.worker.id,workerName:STATE.worker.name};
+  STATE.queue.push({col,doc,id:Math.random().toString(36).slice(2)});
+  STATE.history.push({col,...doc});
+  localStorage.setItem('vpos_queue',JSON.stringify(STATE.queue));
+  localStorage.setItem('vpos_history',JSON.stringify(STATE.history));
+  flushQueue();
+}
+function csvEscape(v){v=v==null?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+async function downloadLog(){
+  if(!STATE.history.length){toast('Nothing logged yet');return;}
+  if(!dl){try{dl=await claude.use("downloads");}catch(e){}}
+  if(!dl){toast('Downloads unavailable in this view');return;}
+  const cols=['ts','worker','workerName','col','bed','activity','durationSec','crop','cohort','qty','unit','packages','quality','type','severity','notes'];
+  const rows=[cols.join(',')].concat(STATE.history.map(h=>cols.map(c=>csvEscape(h[c])).join(',')));
   try{
-    const raw = localStorage.getItem(STORE_KEY);
-    if(raw) return JSON.parse(raw);
-  }catch(e){}
-  return {
-    worker:null, screen:'login', loginErr:'', bedCode:'', bedErr:'', bed:null,
-    activity:null, session:null, modal:null, modalDraft:{}, toast:'', navTab:'field',
-    tables:{ liveSessions:[], activityLog:[], exceptions:[], scouting:[], location:[] },
-    bedIrrigationStatus:{}
-  };
+    await dl.save({filename:'vpos_worker_log_'+STATE.worker.id+'_'+Date.now()+'.csv',data:rows.join('\n')});
+    toast('Log downloaded');
+  }catch(err){
+    const code=err&&err.code?err.code:'unavailable';
+    if(code==='declined')toast('Download cancelled');
+    else toast('Download failed: '+code);
+  }
 }
-function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
-let S = loadState();
-
-function nowISO(){ return new Date().toISOString(); }
-function fmtTime(iso){ const d=new Date(iso); return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
-function uid(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
-function toast(msg){ S.toast = msg; render(); saveState(); setTimeout(()=>{ if(S.toast===msg){ S.toast=''; render(); saveState(); } }, 2600); }
-
-function elapsedMinutes(session){
-  let total = 0;
-  session.segments.forEach(seg=>{
-    const end = seg.end ? new Date(seg.end) : new Date();
-    total += (end - new Date(seg.start));
-  });
-  return Math.max(0, Math.round(total/60000));
+async function flushQueue(){
+  if(!STATE.online||STATE.syncing||!STATE.queue.length)return;
+  if(!db){try{db=await claude.use("db");}catch(e){}}
+  if(!db){setStatus('off');return;}
+  STATE.syncing=true;setStatus('sync');
+  while(STATE.queue.length){
+    const item=STATE.queue[0];
+    try{await db.collection(item.col).doc(item.id).set(item.doc);STATE.queue.shift();localStorage.setItem('vpos_queue',JSON.stringify(STATE.queue));}
+    catch(e){break;}
+  }
+  STATE.syncing=false;setStatus(STATE.queue.length?'off':'on');render();
 }
-function elapsedDisplay(session){
-  let total = 0;
-  session.segments.forEach(seg=>{
-    const end = seg.end ? new Date(seg.end) : new Date();
-    total += (end - new Date(seg.start));
-  });
-  const s = Math.max(0, Math.floor(total/1000));
-  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
-  return h>0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`;
-}
+setInterval(flushQueue,8000);
 
-/* ---------- actions ---------- */
 function doLogin(){
-  const idEl = document.getElementById('in-workerid'), pinEl = document.getElementById('in-pin');
-  const id = idEl.value.trim().toUpperCase(), pin = pinEl.value.trim();
-  const u = USERS.find(u=>u.id.toUpperCase()===id && u.pin===pin);
-  if(!u){ S.loginErr = 'Worker ID or PIN not recognized. Check your badge and try again.'; render(); return; }
-  S.worker = u; S.loginErr=''; S.screen='scan'; render(); saveState();
-}
-function logout(){
-  if(S.session){ toast('Complete or the session before logging out.'); return; }
-  S.worker=null; S.screen='login'; S.bed=null; S.activity=null; render(); saveState();
-}
-function setBedCode(v){ S.bedCode = v; }
-function resolveBed(){
-  const code = (S.bedCode||'').trim().toUpperCase().replace(/^BED:/,'');
-  const bed = BEDS[code];
-  if(!bed){ S.bedErr = 'Unrecognized bed code — check the tag and try again.'; render(); return; }
-  S.bed = Object.assign({id:code}, bed);
-  S.bedErr=''; S.bedCode=''; S.screen='activity'; render(); saveState();
-  S.tables.location.push({Worker_ID:S.worker.id, Bed_ID:code, Timestamp:nowISO()});
-}
-function pickQuick(code){ S.bedCode = code; resolveBed(); }
-function chooseActivity(a){ S.activity = a; render(); }
-function startSession(){
-  if(!S.activity) return;
-  S.session = {
-    Activity_ID: uid('ACT'), Worker_ID:S.worker.id, Bed_ID:S.bed.id, Cohort_ID:S.bed.cohort,
-    Crop_ID:S.bed.crop, Activity:S.activity, Start_Time:nowISO(), Session_Status:'ACTIVE',
-    segments:[{start:nowISO(), end:null}], exceptionsLogged:0
-  };
-  S.tables.liveSessions.push(S.session);
-  S.screen='session'; render(); saveState();
-}
-function pauseSession(){
-  const seg = S.session.segments[S.session.segments.length-1];
-  seg.end = nowISO(); S.session.Session_Status='PAUSED'; render(); saveState();
-}
-function resumeSession(){
-  S.session.segments.push({start:nowISO(), end:null});
-  S.session.Session_Status='ACTIVE'; render(); saveState();
-}
-function openModal(name){ S.modal = name; S.modalDraft = {}; render(); }
-function closeModal(){ S.modal=null; S.modalDraft={}; render(); }
-function draft(k,v){ S.modalDraft[k]=v; }
-
-function submitException(){
-  const d = S.modalDraft;
-  if(!d.type || !d.severity){ toast('Type and severity are required.'); return; }
-  const ex = {
-    Exception_ID: uid('EXC'), Cohort_ID:S.bed.cohort, Exception_Type:d.type, Exception_Status:'OPEN',
-    Blocked_Reason:'', Exception_Notes:d.notes||'', Exception_Date:nowISO(), Domain:d.type, Symptom:'',
-    Severity:d.severity, Requires_Action:'TRUE', Worker:S.worker.id, Timestamp:nowISO(), Photo_URL:d.photo||'',
-    Finding_ID:''
-  };
-  if(d.type==='Irrigation'){
-    ex.Irrigation_Zone_ID = S.bed.zone;
-    ex.Irrigation_Fault_Type = d.fault||'';
-  }
-  S.tables.exceptions.push(ex);
-  S.session.exceptionsLogged++;
-  toast('Exception reported to Manager queue.');
-  closeModal(); saveState();
+  const id=document.getElementById('unInput').value.trim();
+  const pin=document.getElementById('pinInput').value.trim();
+  const w=findWorker(id);
+  if(!w){toast('Unknown username');return;}
+  if(pin!==w.pin){toast('Incorrect PIN');return;}
+  STATE.worker={id:w.id,name:w.name};STATE.screen='app';toast('Welcome, '+w.name);render();
 }
 
-function finishActivityLog(extra){
-  const s = S.session;
-  const seg = s.segments[s.segments.length-1];
-  if(!seg.end) seg.end = nowISO();
-  const entry = Object.assign({
-    Activity_ID:s.Activity_ID, Worker:S.worker.id, Bed_ID:s.Bed_ID, Crop_ID:s.Crop_ID,
-    Task_Type:s.Activity, Start_Time:s.Start_Time, End_Time:nowISO(),
-    Duration:elapsedMinutes(s)+' min', Notes:''
-  }, extra||{});
-  S.tables.activityLog.push(entry);
-  S.tables.location.push({Worker_ID:S.worker.id, Bed_ID:s.Bed_ID, Timestamp:nowISO()});
-  s.Session_Status='COMPLETED';
-  S.session = null; S.activity=null; S.bed=null; S.modal=null; S.modalDraft={};
-  S.screen='scan';
-  toast('Session complete — logged to Activity Log.');
-  saveState();
+function startScan(){
+  STATE.scanning=true;render();
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(stream=>{
+    const v=document.getElementById('scanVideo');v.srcObject=stream;v.play();
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector({formats:['qr_code']});
+      const tick=async()=>{
+        if(!STATE.scanning)return;
+        try{const codes=await det.detect(v);if(codes.length){stopScan(stream);const bed=codes[0].rawValue.split('/').pop();STATE.timerBed=bed;toast('Bed loaded: '+bed);render();return;}}catch(e){}
+        requestAnimationFrame(tick);
+      };tick();
+    }
+  }).catch(()=>{toast('Camera unavailable \u2013 enter bed manually');STATE.scanning=false;render();});
+}
+function stopScan(stream){STATE.scanning=false;if(stream)stream.getTracks().forEach(t=>t.stop());render();}
+
+function startTimer(){
+  const bed=document.getElementById('bedInput')?.value||STATE.timerBed;
+  const act=document.getElementById('actSel')?.value;
+  if(!bed||!act){toast('Select bed and activity');return;}
+  STATE.timerBed=bed;STATE.timerAct=act;STATE.timerStart=Date.now();
+  STATE.timer=setInterval(render,1000);
+  saveDoc('field_sessions',{bed,activity:act,status:'ACTIVE',startedAt:new Date().toISOString()});
+  toast('Session started: '+act+' @ '+bed);render();
+}
+function stopTimer(){
+  clearInterval(STATE.timer);const dur=Math.floor((Date.now()-STATE.timerStart)/1000);
+  saveDoc('field_activity_log',{bed:STATE.timerBed,activity:STATE.timerAct,durationSec:dur,endedAt:new Date().toISOString()});
+  toast('Logged '+Math.round(dur/60)+' min \u2013 '+STATE.timerAct);
+  STATE.timer=null;STATE.timerBed=null;STATE.timerAct=null;render();
 }
 
-function completeGeneric(){
-  const d = S.modalDraft;
-  finishActivityLog({Quantity:d.qty||'', Unit:d.unit||'', Notes:d.notes||''});
+function submitHarvest(e){
+  e.preventDefault();const f=e.target;
+  saveDoc('harvest_log',{cohort:f.cohort.value,crop:f.crop.value,qty:f.qty.value,unit:f.unit.value,packages:f.pkg.value,quality:f.quality.value,notes:f.notes.value,bed:f.bed.value});
+  toast('Harvest logged');f.reset();STATE.tab='home';render();
 }
-function completeIrrigationCheck(){
-  const d = S.modalDraft;
-  if(!d.result){ toast('Choose PASS or FAIL.'); return; }
-  if(d.result==='FAIL'){
-    if(!d.fault){ toast('Select a fault type.'); return; }
-    const ex = {
-      Exception_ID: uid('EXC'), Cohort_ID:S.bed.cohort, Exception_Type:'IRRIGATION_FAULT', Exception_Status:'OPEN',
-      Blocked_Reason:'', Exception_Notes:d.notes||'', Exception_Date:nowISO(), Domain:'Irrigation', Symptom:d.fault,
-      Severity: (d.fault==='BLOWOUT'||d.fault==='LEAK') ? 'HIGH' : 'MEDIUM', Requires_Action:'TRUE',
-      Worker:S.worker.id, Timestamp:nowISO(), Photo_URL:d.photo||'', Finding_ID:'',
-      Irrigation_Zone_ID:S.bed.zone, Irrigation_Fault_Type:d.fault
-    };
-    S.tables.exceptions.push(ex);
-    const sev = (d.fault==='BLOWOUT'||d.fault==='LEAK') ? 'CRITICAL':'AT_RISK';
-    S.bedIrrigationStatus[S.bed.id] = sev;
-  } else {
-    S.bedIrrigationStatus[S.bed.id] = 'NORMAL';
-  }
-  finishActivityLog({Notes:'IrrigationCheck: '+d.result+(d.fault?(' / '+d.fault):'')+(d.notes?(' — '+d.notes):'')});
+let photoData=null;
+function onPhoto(input){
+  const file=input.files[0];if(!file)return;
+  const img=new Image();const reader=new FileReader();
+  reader.onload=ev=>{img.onload=()=>{const c=document.createElement('canvas');const s=Math.min(1,320/img.width);c.width=img.width*s;c.height=img.height*s;
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);photoData=c.toDataURL('image/jpeg',0.6);toast('Photo attached');};img.src=ev.target.result;};
+  reader.readAsDataURL(file);
 }
-function completeScouting(){
-  const d = S.modalDraft;
-  if(!d.domain || !d.severity){ toast('Domain and severity are required.'); return; }
-  const finding = {
-    Finding_ID: uid('FND'), Bed_ID:S.bed.id, Cohort_ID:S.bed.cohort, Domain:d.domain, Symptom:d.symptom||'',
-    Severity:d.severity, Requires_Action: d.requiresAction ? 'TRUE':'FALSE', Notes:d.notes||'', Photo_URL:d.photo||'',
-    Worker:S.worker.id, Timestamp:nowISO(), Exception_ID:'', Resolved_Status:'OPEN'
-  };
-  if(d.requiresAction){
-    const ex = {
-      Exception_ID: uid('EXC'), Cohort_ID:S.bed.cohort, Exception_Type:d.domain, Exception_Status:'OPEN',
-      Blocked_Reason:'', Exception_Notes:d.notes||'', Exception_Date:nowISO(), Domain:d.domain, Symptom:d.symptom||'',
-      Severity:d.severity, Requires_Action:'TRUE', Worker:S.worker.id, Timestamp:nowISO(), Photo_URL:d.photo||'',
-      Finding_ID:finding.Finding_ID
-    };
-    finding.Exception_ID = ex.Exception_ID;
-    S.tables.exceptions.push(ex);
-  }
-  S.tables.scouting.push(finding);
-  finishActivityLog({Notes:'Scouting: '+d.domain+' / '+d.severity});
-}
-function completeHarvest(){
-  const d = S.modalDraft;
-  if(!d.qty){ toast('Enter a quantity.'); return; }
-  finishActivityLog({Quantity:d.qty, Unit:d.unit||HARVEST_UNITS[0]});
+function submitException(e){
+  e.preventDefault();const f=e.target;
+  saveDoc('exception_log',{type:f.type.value,severity:f.severity.value,bed:f.bed.value,notes:f.notes.value,photo:photoData||null});
+  toast('Exception reported');photoData=null;f.reset();STATE.tab='home';render();
 }
 
-function setNav(tab){ S.navTab = tab; render(); saveState(); }
-
-/* ---------- render ---------- */
-function esc(s){ return (s===undefined||s===null) ? '' : String(s); }
-
-function render(){
-  const app = document.getElementById('app');
-  app.innerHTML = screenHTML();
-  const idEl = document.getElementById('in-workerid');
-  if(idEl) idEl.focus();
-  attachEnter();
-}
-function attachEnter(){
-  document.querySelectorAll('[data-enter]').forEach(el=>{
-    el.addEventListener('keydown', e=>{ if(e.key==='Enter'){ window[el.dataset.enter](); } });
-  });
-}
-
-function topbar(title, sub, showLogout){
-  return `<div class="topbar">
-    <div><div class="brand">${esc(title)}</div><div class="sub">${esc(sub)}</div></div>
-    ${showLogout ? `<button onclick="logout()">Log out</button>` : ''}
-  </div>`;
-}
-
-function screenHTML(){
-  if(!S.worker) return loginScreen();
-  let body;
-  if(S.session) body = sessionScreen();
-  else if(S.navTab==='logs') body = logsScreen();
-  else if(S.screen==='activity' && S.bed) body = activityScreen();
-  else body = scanScreen();
-  return body + (S.toast ? `<div class="toast">${esc(S.toast)}</div>` : '') + modalHTML();
-}
-
-function loginScreen(){
-  return `
-  ${topbar('WorkerApp','Ngapori Ranch — Field Execution')}
-  <div class="content">
-    <h1>Log in</h1>
-    <p class="lead">Enter your Worker ID and PIN to start your shift.</p>
-    ${S.loginErr ? `<div class="error">${esc(S.loginErr)}</div>` : ''}
-    <div class="field"><label>Worker ID</label><input id="in-workerid" data-enter="doLogin" placeholder="usr-worker1" autocomplete="off"></div>
-    <div class="field"><label>PIN</label><input id="in-pin" data-enter="doLogin" type="password" inputmode="numeric" placeholder="••••"></div>
-    <button class="btn btn-primary" onclick="doLogin()">Log in</button>
-    <p class="lead" style="margin-top:18px;font-size:12px;">Demo ID: usr-worker1 / 1234</p>
-  </div>`;
-}
-
-function scanScreen(){
-  return `
-  ${topbar('WorkerApp', S.worker.name, true)}
-  <div class="content">
-    <h1>Scan a bed</h1>
-    <p class="lead">Scan the bed's QR tag, or enter its code below to resolve the crop, cohort and allowed activities.</p>
-    ${S.bedErr ? `<div class="error">${esc(S.bedErr)}</div>` : ''}
-    <div class="field">
-      <label>Bed code</label>
-      <input id="in-bedcode" data-enter="resolveBed" placeholder="BED:B1-17" value="${esc(S.bedCode)}" oninput="setBedCode(this.value)" autocomplete="off">
-    </div>
-    <button class="btn btn-primary" onclick="resolveBed()">Resolve bed</button>
-    <p class="lead" style="margin:16px 0 6px;font-size:12px;">Camera scanning isn't available in this preview — tap a demo tag instead:</p>
-    <div class="quickcodes">
-      ${Object.keys(BEDS).map(c=>`<button class="quickcode" onclick="pickQuick('${c}')">${c}</button>`).join('')}
-    </div>
-  </div>
-  ${navbar()}`;
-}
-
-function activityScreen(){
-  const b = S.bed;
-  const irr = S.bedIrrigationStatus[b.id];
-  return `
-  ${topbar('WorkerApp', S.worker.name, true)}
-  <div class="content">
-    <h1>${esc(b.id)}</h1>
-    <p class="lead">${esc(b.block)} · ${esc(b.zone)}</p>
-    <div class="card">
-      <div class="row"><span>Crop</span><span>${esc(b.crop)}</span></div>
-      <div class="row"><span>Cohort</span><span>${esc(b.cohort)}</span></div>
-      ${irr ? `<div class="row"><span>Irrigation</span><span><span class="chip ${irr==='NORMAL'?'chip-ok':irr==='CRITICAL'?'chip-danger':'chip-warn'}">${irr}</span></span></div>` : ''}
-    </div>
-    <h2>Select activity</h2>
-    ${b.activities.map(a=>`
-      <button class="activity-btn" onclick="chooseActivity('${a}')" style="${S.activity===a?'border-color:var(--forest);background:var(--sand);':''}">
-        <span>${labelize(a)}</span><span class="tag">${S.activity===a?'Selected':'Tap to select'}</span>
-      </button>`).join('')}
-    <button class="btn btn-primary" ${S.activity?'':'disabled'} onclick="startSession()" style="margin-top:8px;">Start session</button>
-    <button class="btn btn-ghost" onclick="S.bed=null;S.activity=null;S.screen='scan';render();saveState();">Scan a different bed</button>
-  </div>
-  ${navbar()}`;
-}
-
-function labelize(a){
-  return a.replace(/([a-z])([A-Z])/g,'$1 $2');
-}
-
-function sessionScreen(){
-  const s = S.session;
-  const paused = s.Session_Status==='PAUSED';
-  return `
-  ${topbar('WorkerApp', S.worker.name, false)}
-  <div class="content">
-    <h1>${labelize(s.Activity)}</h1>
-    <p class="lead">${esc(s.Bed_ID)} · ${esc(s.Crop_ID)} · ${esc(s.Cohort_ID)}</p>
-    <div class="card" style="text-align:center;">
-      <div class="timer">${elapsedDisplay(s)}</div>
-      <div class="timer-status">${paused ? '⏸ Paused' : '● Active'}${s.exceptionsLogged?` · ${s.exceptionsLogged} exception(s) reported`:''}</div>
-    </div>
-    ${paused
-      ? `<button class="btn btn-primary" onclick="resumeSession()">Resume</button>`
-      : `<button class="btn btn-warn" onclick="pauseSession()">Pause</button>`}
-    <button class="btn btn-outline" onclick="openModal('exception')">Report exception</button>
-    <button class="btn btn-danger" onclick="openCompleteModal()">Complete activity</button>
-  </div>`;
-}
-function openCompleteModal(){
-  if(S.activity==='IrrigationCheck') openModal('completeIrrigation');
-  else if(S.activity==='Scouting') openModal('completeScouting');
-  else if(S.activity==='Harvest') openModal('completeHarvest');
-  else openModal('completeGeneric');
-}
-
-function navbar(){
-  return `<div class="navbar">
-    <button class="navitem ${S.navTab==='field'?'active':''}" onclick="setNav('field')"><div class="dot"></div>Field</button>
-    <button class="navitem ${S.navTab==='logs'?'active':''}" onclick="setNav('logs')"><div class="dot"></div>Log</button>
-  </div>`;
-}
-
-function logsScreen(){
-  const t = S.tables;
-  function section(title, rows, renderRow){
-    return `<h2>${title} (${rows.length})</h2>
-    <div class="loglist">
-      ${rows.length ? rows.slice().reverse().slice(0,8).map(renderRow).join('') : `<div class="empty">Nothing logged yet.</div>`}
+function view(){
+  if(STATE.screen==='login'){
+    return `<div class="top"><div class="brand">\u{1F33E} VPOS Worker</div></div>
+    <div class="card" style="margin-top:40px">
+      <h1>Sign in</h1><p class="sub">Enter your username and PIN</p>
+      <input id="unInput" placeholder="Username (e.g. lisa)" autocapitalize="none">
+      <input id="pinInput" placeholder="PIN" type="password" inputmode="numeric" maxlength="4">
+      <button class="btn primary" onclick="doLogin()">Sign In</button>
     </div>`;
   }
-  return `
-  ${topbar('WorkerApp', S.worker.name, true)}
-  <div class="content">
-    <h1>Activity feed</h1>
-    <p class="lead">What this device has fed into FIELD_ACTIVITY_LOG, EXCEPTION_LOG and SCOUT_FINDING this session.</p>
-    ${section('Completed activity', t.activityLog, r=>`
-      <div class="logrow"><div class="t1">${labelize(r.Task_Type)} — ${esc(r.Bed_ID)}</div>
-      <div class="t2">${fmtTime(r.End_Time)} · ${esc(r.Duration)}${r.Quantity?(' · '+esc(r.Quantity)+' '+esc(r.Unit)):''}</div></div>`)}
-    ${section('Exceptions', t.exceptions, r=>`
-      <div class="logrow"><div class="t1">${esc(r.Exception_Type)} <span class="chip ${r.Severity==='CRITICAL'||r.Severity==='HIGH'?'chip-danger':'chip-warn'}" style="margin-left:6px;">${esc(r.Severity)}</span></div>
-      <div class="t2">${fmtTime(r.Timestamp)}${r.Irrigation_Zone_ID?(' · Zone '+esc(r.Irrigation_Zone_ID)):''}${r.Exception_Notes?(' · '+esc(r.Exception_Notes)):''}</div></div>`)}
-    ${section('Scouting findings', t.scouting, r=>`
-      <div class="logrow"><div class="t1">${esc(r.Domain)} — ${esc(r.Bed_ID)}</div>
-      <div class="t2">${fmtTime(r.Timestamp)} · ${esc(r.Severity)}${r.Requires_Action==='TRUE'?' · action required':''}</div></div>`)}
-    <button class="linkbtn" style="margin-top:8px;" onclick="if(confirm('Clear all demo data on this device?')){localStorage.removeItem('${STORE_KEY}');location.reload();}">Reset demo data</button>
-  </div>
-  ${navbar()}`;
-}
 
-/* ---------- modals ---------- */
-function modalHTML(){
-  if(!S.modal) return '';
-  const m = S.modal;
-  let inner;
-  if(m==='exception') inner = exceptionModal();
-  else if(m==='completeGeneric') inner = completeGenericModal();
-  else if(m==='completeIrrigation') inner = completeIrrigationModal();
-  else if(m==='completeScouting') inner = completeScoutingModal();
-  else if(m==='completeHarvest') inner = completeHarvestModal();
-  return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet">${inner}</div></div>`;
+  const statusMap={on:['on','Connected'],off:['off','Offline'],sync:['sync','Syncing']};
+  const [sc,sl]=statusMap[STATE._status||'off'];
+  let body='';
+  if(STATE.tab==='home'){
+    body=`${STATE.timer?`<div class="banner"><div><div style="font-size:12px;color:var(--sub)">${STATE.timerAct} @ ${STATE.timerBed}</div><div class="timerNum">${elapsed()}</div></div><button class="btn bad" style="width:auto;padding:12px 18px" onclick="stopTimer()">Stop</button></div>`:''}
+    <div class="tiles">
+      <button class="tile" onclick="STATE.tab='scan';render()"><div class="ic">\u{1F4F7}</div><b>Scan Bed</b><span>QR code lookup</span></button>
+      <button class="tile" onclick="STATE.tab='timer';render()"><div class="ic">\u23F1\uFE0F</div><b>${STATE.timer?'Session Active':'Start Task'}</b><span>Weeding, scouting...</span></button>
+      <button class="tile" onclick="STATE.tab='harvest';render()"><div class="ic">\u{1F955}</div><b>Log Harvest</b><span>Qty, packages, grade</span></button>
+      <button class="tile" onclick="STATE.tab='exception';render()"><div class="ic">\u26A0\uFE0F</div><b>Report Issue</b><span>Pest, wilt, irrigation</span></button>
+    </div>
+    <div class="card"><h2>Queue</h2><p class="sub">${STATE.queue.length?STATE.queue.length+' item(s) waiting to sync':'All caught up \u2014 everything synced'}</p>
+    <button class="btn ghost" onclick="downloadLog()">\u2B07 Download My Log (CSV) \u2014 ${STATE.history.length} entries</button></div>`;
+  } else if(STATE.tab==='scan'){
+    body=`<div class="card"><h2>Scan Bed QR</h2>
+    ${STATE.scanning?'<video id="scanVideo" playsinline muted></video><button class="btn ghost" onclick="stopScan()">Cancel</button>':`<button class="btn primary" onclick="startScan()">\u{1F4F7} Open Camera</button>`}
+    <p class="sub" style="margin-top:12px">Or enter the bed code manually:</p>
+    <input id="bedInput" placeholder="e.g. B4-01" value="${STATE.timerBed||''}">
+    <button class="btn ghost" onclick="STATE.timerBed=document.getElementById('bedInput').value.toUpperCase();toast('Bed set: '+STATE.timerBed);STATE.tab='home';render()">Use This Bed</button>
+    </div>`;
+  } else if(STATE.tab==='timer'){
+    body=`<div class="card"><h2>Field Session</h2>
+    <input id="bedInput" placeholder="Bed code" value="${STATE.timerBed||''}">
+    <select id="actSel">${ACTS.map(a=>`<option ${STATE.timerAct===a?'selected':''}>${a}</option>`).join('')}</select>
+    ${STATE.timer?`<div style="text-align:center;margin:14px 0"><div class="timerNum">${elapsed()}</div></div><button class="btn bad" onclick="stopTimer()">Stop & Log Session</button>`:`<button class="btn primary" onclick="startTimer()">Start Timer</button>`}
+    </div>`;
+  } else if(STATE.tab==='harvest'){
+    body=`<div class="card"><h2>Harvest Log</h2>
+    <form onsubmit="submitHarvest(event)">
+    <input name="bed" placeholder="Bed code" value="${STATE.timerBed||''}" required>
+    <select name="crop" required><option value="">Crop / Cohort</option>${CROPS.map(c=>`<option>${c}</option>`).join('')}</select>
+    <input name="cohort" placeholder="Cohort ID (e.g. BET-C01)">
+    <div class="grid2"><input name="qty" type="number" step="0.1" placeholder="Quantity" required><select name="unit"><option>kg</option><option>bunches</option><option>pieces</option><option>crates</option></select></div>
+    <input name="pkg" type="number" placeholder="Package count">
+    <select name="quality"><option>Grade A</option><option>Grade B</option><option>Reject</option></select>
+    <textarea name="notes" placeholder="Notes (optional)"></textarea>
+    <button class="btn primary">Submit Harvest</button>
+    </form></div>`;
+  } else if(STATE.tab==='exception'){
+    body=`<div class="card"><h2>Report Exception</h2>
+    <form onsubmit="submitException(event)">
+    <select name="type" required>${EXC.map(([t,i])=>`<option>${i} ${t}</option>`).join('')}</select>
+    <div class="row">${['Low','Medium','High'].map(s=>`<span class="pill" data-sev="${s}" onclick="document.querySelectorAll('[data-sev]').forEach(p=>p.classList.remove('sel'));this.classList.add('sel');document.getElementById('sevInput').value=this.dataset.sev">${s}</span>`).join('')}</div>
+    <input type="hidden" name="severity" id="sevInput" value="Medium">
+    <input name="bed" placeholder="Bed code" value="${STATE.timerBed||''}" required>
+    <textarea name="notes" placeholder="What did you observe?"></textarea>
+    <input type="file" accept="image/*" capture="environment" onchange="onPhoto(this)">
+    <button class="btn warn">Submit Report</button>
+    </form></div>`;
+  }
+  return `<div class="top"><div class="brand">${STATE.tab==='home'?'\u{1F33E} '+STATE.worker.name:'\u2190'}</div>
+  <div style="display:flex;align-items:center;gap:10px">${STATE.tab!=='home'?`<a class="link" onclick="STATE.tab='home';render()">Home</a>`:''}<div class="status"><span class="dot ${sc}"></span>${sl}</div></div></div>
+  ${body}
+  ${STATE.tab==='home'?`<button class="btn ghost" style="margin-top:6px" onclick="STATE.screen='login';STATE.worker=null;render()">Sign out</button>`:''}`;
 }
-function selectSeg(name, options, cur){
-  return `<div class="segbtns">${options.map(o=>`<button class="${cur===o?'active':''}" onclick="draft('${name}','${o}');render();">${o}</button>`).join('')}</div>`;
-}
-
-function exceptionModal(){
-  const d = S.modalDraft;
-  return `<div class="sheet-handle"></div>
-  <h2>Report exception</h2>
-  <div class="field"><label>Type</label>
-    ${selectSeg('type', [...SCOUT_DOMAINS,'Irrigation'], d.type)}
-  </div>
-  ${d.type==='Irrigation' ? `<div class="field"><label>Fault type</label>${selectSeg('fault', IRRIGATION_FAULTS, d.fault)}</div>` : ''}
-  <div class="field"><label>Severity</label>${selectSeg('severity', SEVERITIES, d.severity)}</div>
-  <div class="field"><label>Notes</label><textarea oninput="draft('notes',this.value)">${esc(d.notes)}</textarea></div>
-  <div class="field"><label>Photo URL (optional)</label><input oninput="draft('photo',this.value)" placeholder="https://..." value="${esc(d.photo)}"></div>
-  <button class="btn btn-primary" onclick="submitException()">Submit exception</button>
-  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
-}
-function completeGenericModal(){
-  const d = S.modalDraft;
-  return `<div class="sheet-handle"></div>
-  <h2>Complete: ${labelize(S.activity)}</h2>
-  <div class="field"><label>Quantity (optional)</label><input inputmode="decimal" oninput="draft('qty',this.value)" value="${esc(d.qty)}"></div>
-  <div class="field"><label>Unit (optional)</label><input oninput="draft('unit',this.value)" placeholder="e.g. beds, ft, trays" value="${esc(d.unit)}"></div>
-  <div class="field"><label>Notes (optional)</label><textarea oninput="draft('notes',this.value)">${esc(d.notes)}</textarea></div>
-  <button class="btn btn-danger" onclick="completeGeneric()">Complete session</button>
-  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
-}
-function completeIrrigationModal(){
-  const d = S.modalDraft;
-  return `<div class="sheet-handle"></div>
-  <h2>Irrigation check result</h2>
-  <div class="field"><label>Result</label>${selectSeg('result', ['PASS','FAIL'], d.result)}</div>
-  ${d.result==='FAIL' ? `<div class="field"><label>Fault type</label>${selectSeg('fault', IRRIGATION_FAULTS, d.fault)}</div>` : ''}
-  <div class="field"><label>Notes</label><textarea oninput="draft('notes',this.value)">${esc(d.notes)}</textarea></div>
-  <div class="field"><label>Photo URL (optional)</label><input oninput="draft('photo',this.value)" value="${esc(d.photo)}"></div>
-  <button class="btn ${d.result==='FAIL'?'btn-danger':'btn-primary'}" onclick="completeIrrigationCheck()">Complete session</button>
-  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
-}
-function completeScoutingModal(){
-  const d = S.modalDraft;
-  return `<div class="sheet-handle"></div>
-  <h2>Scouting finding</h2>
-  <div class="field"><label>Domain</label>${selectSeg('domain', SCOUT_DOMAINS, d.domain)}</div>
-  <div class="field"><label>Symptom</label><input oninput="draft('symptom',this.value)" value="${esc(d.symptom)}"></div>
-  <div class="field"><label>Severity</label>${selectSeg('severity', SEVERITIES, d.severity)}</div>
-  <div class="field"><label>Requires action?</label>${selectSeg('requiresAction', ['Yes','No'], d.requiresAction===true?'Yes':d.requiresAction===false?'No':undefined)}</div>
-  <div class="field"><label>Notes</label><textarea oninput="draft('notes',this.value)">${esc(d.notes)}</textarea></div>
-  <div class="field"><label>Photo URL (optional)</label><input oninput="draft('photo',this.value)" value="${esc(d.photo)}"></div>
-  <button class="btn btn-danger" onclick="draft('requiresAction', S.modalDraft.requiresAction==='Yes'); completeScouting()">Submit finding</button>
-  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
-}
-function completeHarvestModal(){
-  const d = S.modalDraft;
-  return `<div class="sheet-handle"></div>
-  <h2>Harvest quantity</h2>
-  <div class="field"><label>Quantity</label><input inputmode="decimal" oninput="draft('qty',this.value)" value="${esc(d.qty)}" placeholder="e.g. 12.5"></div>
-  <div class="field"><label>Unit</label>${selectSeg('unit', HARVEST_UNITS, d.unit)}</div>
-  <button class="btn btn-primary" onclick="completeHarvest()">Complete session</button>
-  <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`;
-}
-
-/* ---------- boot + ticking timer ---------- */
-render();
-setInterval(()=>{ if(S.session && S.session.Session_Status==='ACTIVE'){ const el=document.querySelector('.timer'); if(el) el.textContent = elapsedDisplay(S.session); } }, 1000);
+function render(){document.getElementById('app').innerHTML=view();}
+STATE.screen='login';render();
+setStatus(navigator.onLine?'on':'off');
 </script>
 </body>
 </html>
