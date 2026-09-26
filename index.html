@@ -12,7 +12,7 @@
 body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Arial,sans-serif;min-height:100vh;
 padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
 .wrap{max-width:460px;margin:0 auto;padding:14px 16px 40px;}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 0 14px;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:2px 0 14px;}
 .topbar .name{font-weight:700;font-size:15px;}
 .topbar .role{color:var(--sub);font-size:12px;}
 h1{font-size:19px;margin:4px 0 12px;}
@@ -41,6 +41,18 @@ input[type=text],input[type=password],input[type=number]{width:100%;padding:13px
 .act-btn{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:8px;font-size:15px;color:var(--text);cursor:pointer;}
 .act-btn.sel{border-color:var(--accent);background:rgba(47,107,60,0.12);}
 .chk{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;}
+.conn-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--accent);background:rgba(47,107,60,0.12);padding:4px 10px;border-radius:20px;margin-bottom:10px;}
+.conn-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);}
+.conn-pill.off{color:var(--warn);background:rgba(193,83,31,0.12);}
+.conn-pill.off .dot{background:var(--warn);}
+.detail-row{margin-top:6px;font-size:14px;}
+.qa-grid{display:flex;gap:8px;margin:8px 0 2px;}
+.qa-grid>*{flex:1;}
+.qa-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 4px;font-size:11.5px;font-weight:700;color:var(--text);cursor:pointer;text-align:center;}
+.qa-btn:active{background:rgba(47,107,60,0.12);}
+.qa-icon{font-size:21px;}
+.hist{font-size:13px;color:var(--sub);padding:6px 2px 0;border-top:1px solid var(--border);margin-top:8px;}
+.hist-row{padding:4px 0;}
 </style>
 </head>
 <body>
@@ -55,8 +67,10 @@ async function api(action,payload){
  if(st.token && action!=='login') payload.token=st.token;
  try{
   const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
-  return await res.json();
- }catch(e){ return {ok:false,error:'Could not reach the server. Check your connection.',code:'NETWORK_ERROR'}; }
+  const r=await res.json();
+  st.connected=true;
+  return r;
+ }catch(e){ st.connected=false; return {ok:false,error:'Could not reach the server. Check your connection.',code:'NETWORK_ERROR'}; }
 }
 /** returns true if it handled (logged the user out) a dead-session error */
 function handleAuthError(r){
@@ -64,28 +78,81 @@ function handleAuthError(r){
  return false;
 }
 
-/* ================= Static reference data (from VPOS_System.xlsx) =================
-   No worker-facing read endpoint exists yet on the backend for live bed/cohort
-   status, so this list is the workbook's last-known layout, not live data. */
+/* ================= Static reference data =================
+   Sourced directly from the live VPOS_System.xlsx (BED_MASTER, ACTIVITY_REFERENCE,
+   COHORT_PRODUCTION). No worker-facing read endpoint exists yet on the backend for
+   LIVE bed/cohort/status data, so BED_STATE_SNAPSHOT / COHORT_SNAPSHOT /
+   ACTIVITY_LOG_SNAPSHOT below are this workbook's last-known state, not a live feed
+   -- they need to be replaced by a real "get-bed-detail" / "get-bed-history" route
+   (or refreshed by hand) to stay accurate. BED_MASTER.Zone is not populated for any
+   bed in the current workbook, so Zone is omitted from the UI until that column has
+   real data. */
 const BLOCKS=[['B1','Block 1',55],['B2','Block 2',55],['B3','Block 3',55],['B4','Block 4',55],['Z5','Zone 5',11]];
-const BED_NOTES={'B4-01':'Snapshot: growing Beets (BET-C01)'};
-// [Activity_ID, Activity_Name, Is_Quantity_Based, Default_Unit]
-const ACTIVITIES=[['ACT_001','FieldPrep',false,''],['ACT_002','BedShaping',false,''],['ACT_003','Mulching',false,''],
-['ACT_004','TrellisingSetup',false,''],['ACT_005','IrrigationSetup',false,''],['ACT_006','Planting',false,''],
-['ACT_007','DirectSeeding',false,''],['ACT_008','Transplanting',false,''],['ACT_009','Replanting',false,''],
-['ACT_010','Thinning',false,''],['ACT_011','Weeding',false,''],['ACT_012','Fertilizing',true,'lbs'],
-['ACT_013','IrrigationCheck',false,''],['ACT_014','PestControl',false,''],['ACT_015','DiseaseControl',false,''],
-['ACT_016','Pruning',false,''],['ACT_017','Trellising',false,''],['ACT_018','Harvest',true,'lbs'],
-['ACT_019','PostHarvestCleanup',false,''],['ACT_020','FieldTurnover',false,''],['ACT_022','CropCleanup',false,''],
-['ACT_023','Scouting',false,'']];
+
+// Bed_ID -> {status, cohortId} for any bed NOT at the BED_STATUS_RULES default (AVAILABLE, no cohort).
+// NOTE: 'ASSIGNED' is the raw Bed_Status value currently in BED_MASTER for B4-01, but it is not one of
+// the Valid_Bed_Status_Values on the BED_STATUS_RULES tab (AVAILABLE/RESERVED/PLANTED/GROWING/HARVEST
+// READY/HARVESTING/POST-HARVEST ACTIVITIES/BLOCKED) -- per R02 a confirmed-but-unplanted cohort should
+// read RESERVED. Shown as-is rather than silently relabeled; worth a data-integrity fix upstream.
+const BED_STATE_SNAPSHOT={'B4-01':{status:'ASSIGNED',cohortId:'BET-C01'}};
+const COHORT_SNAPSHOT={'BET-C01':{cropId:'BET',cropName:'Beets'}};
+// Bed_ID -> [{activityName,workerId,endTime|startTime}], from FIELD_ACTIVITY_LOG. Currently empty workbook-wide.
+const ACTIVITY_LOG_SNAPSHOT={};
+
+// From ACTIVITY_REFERENCE (23 rows). workerExec mirrors Is_Worker_Executable exactly --
+// only ACT_021 StateChange is manager-only and excluded from the worker picklist.
+const ACTIVITIES=[
+ {id:'ACT_001',name:'FieldPrep',domain:'Prep',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_002',name:'BedShaping',domain:'Prep',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_003',name:'Mulching',domain:'Prep',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_004',name:'TrellisingSetup',domain:'Prep',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_005',name:'IrrigationSetup',domain:'Prep',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_006',name:'Planting',domain:'Planting',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_007',name:'DirectSeeding',domain:'Planting',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_008',name:'Transplanting',domain:'Planting',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_009',name:'Replanting',domain:'Planting',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_010',name:'Thinning',domain:'Planting',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_011',name:'Weeding',domain:'CropCare',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_012',name:'Fertilizing',domain:'CropCare',qtyBased:true,unit:'lbs',workerExec:true},
+ {id:'ACT_013',name:'IrrigationCheck',domain:'CropCare',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_014',name:'PestControl',domain:'CropCare',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_015',name:'DiseaseControl',domain:'CropCare',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_016',name:'Pruning',domain:'CropCare',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_017',name:'Trellising',domain:'CropCare',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_018',name:'Harvest',domain:'Harvest',qtyBased:true,unit:'lbs',workerExec:true},
+ {id:'ACT_019',name:'PostHarvestCleanup',domain:'Harvest',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_020',name:'FieldTurnover',domain:'Harvest',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_021',name:'StateChange',domain:'State',qtyBased:false,unit:'',workerExec:false},
+ {id:'ACT_022',name:'CropCleanup',domain:'State',qtyBased:false,unit:'',workerExec:true},
+ {id:'ACT_023',name:'Scouting',domain:'State',qtyBased:false,unit:'',workerExec:true}
+];
+function actById(id){return ACTIVITIES.find(a=>a.id===id);}
+
+// Field Actions shortcuts. NOTE: ACTIVITY_REFERENCE has no literal "apply/run water" activity --
+// IrrigationCheck ("Validate irrigation performance and detect anomalies") is the closest CropCare-stage
+// match to "Log Water Pass" and is used here as a best guess. Please confirm this is the intended
+// mapping (or tell me the correct Activity_ID) before relying on it.
+const QUICK_ACTIONS=[
+ {id:'ACT_013',icon:'💧',label:'Log Water Pass'},
+ {id:'ACT_012',icon:'🧪',label:'Log Fertilizer'},
+ {id:'ACT_011',icon:'🌿',label:'Log Weeding'}
+];
 
 function allBeds(){const out=[];for(const[p,,n]of BLOCKS){for(let i=1;i<=n;i++)out.push(p+'-'+String(i).padStart(2,'0'));}return out;}
 function bedBlock(id){const p=id.split('-')[0];const b=BLOCKS.find(x=>x[0]===p);return b?b[1]:'';}
+function bedDetail(id){
+ const snap=BED_STATE_SNAPSHOT[id]||{};
+ const status=snap.status||'AVAILABLE';
+ const cohortId=snap.cohortId||null;
+ const cohort=cohortId?COHORT_SNAPSHOT[cohortId]:null;
+ return{bedId:id,block:bedBlock(id),zone:null,status:status,cohortId:cohortId,cropName:cohort?cohort.cropName:null};
+}
 function fmt(ms){if(ms<0)ms=0;let s=Math.floor(ms/1000);const h=Math.floor(s/3600);s-=h*3600;const m=Math.floor(s/60);s-=m*60;
 return(h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
 function elapsed(s){const paused=s.totalPausedMs||0;if(s.status==='paused')return s.pausedAt-s.startTime-paused;
 if(s.status==='completed')return s.endTime-s.startTime-paused;return Date.now()-s.startTime-paused;}
 function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function shortName(n){return(n||'').trim().split(/\s+/)[0]||n;}
 
 /* ================= Local mirror (this device only) =================
    Sessions actually live in FIELD_LIVE_SESSION / FIELD_ACTIVITY_LOG on the
@@ -96,12 +163,12 @@ function allSessions(){try{return JSON.parse(localStorage.getItem('vpos_sessions
 function saveSessions(arr){localStorage.setItem('vpos_sessions',JSON.stringify(arr));}
 
 let tickTimer=null;
-let st={screen:'login',me:null,token:null,workerIdInput:'',pinInput:'',err:null,busy:false,
- sessions:[],scanQuery:'',selBed:null,selAct:null,completingId:null,qty:'',unit:'',notes:'',isFinal:false};
+let st={screen:'login',me:null,token:null,workerIdInput:'',pinInput:'',err:null,busy:false,connected:false,
+ sessions:[],scanQuery:'',selBed:null,selAct:null,showAllActs:false,showHistory:false,completingId:null,qty:'',unit:'',notes:'',isFinal:false};
 
 try{
  const sess=JSON.parse(localStorage.getItem('vpos_session')||'null');
- if(sess&&sess.token&&sess.me){st.me=sess.me;st.token=sess.token;st.screen='home';}
+ if(sess&&sess.token&&sess.me){st.me=sess.me;st.token=sess.token;st.screen='home';st.connected=true;}
 }catch(e){}
 function loadForMe(){st.sessions=allSessions().filter(s=>s.workerId===st.me.workerId).sort((a,b)=>b.startTime-a.startTime);}
 if(st.me)loadForMe();
@@ -127,28 +194,33 @@ function doLogout(callServer){
  localStorage.removeItem('vpos_session');st.me=null;st.token=null;st.sessions=[];go('login');
 }
 
-function startNewTask(){st.scanQuery='';st.selBed=null;st.selAct=null;go('scan');}
+function startNewTask(){st.scanQuery='';st.selBed=null;st.selAct=null;st.showAllActs=false;st.showHistory=false;go('scan');}
 function processScan(){
  const q=(st.scanQuery||'').trim().toUpperCase();
  if(allBeds().includes(q))selectBed(q);
  else st.err='No bed found for "'+st.scanQuery+'". Try Search Beds below.';
  render();
 }
-function selectBed(id){st.selBed=id;st.selAct=null;go('activity');}
-function selectAct(idx){st.selAct=ACTIVITIES[idx];render();}
+function selectBed(id){st.selBed=id;st.selAct=null;st.showAllActs=false;st.showHistory=false;go('assignment');}
+function selectAct(id){st.selAct=actById(id);render();}
 
 async function confirmStart(){
  if(!st.selBed||!st.selAct||st.busy)return;
  st.busy=true;st.err=null;render();
- const r=await api('start-activity',{bedId:st.selBed,activityName:st.selAct[1]});
+ const r=await api('start-activity',{bedId:st.selBed,activityName:st.selAct.name});
  st.busy=false;
  if(handleAuthError(r))return;
  if(!r.ok){st.err=r.error||('Could not start that activity ('+(r.code||'error')+').');render();return;}
  const arr=allSessions();
  arr.push({id:r.data.sessionId,workerId:st.me.workerId,bedId:st.selBed,block:bedBlock(st.selBed),
-  activityId:st.selAct[0],activityName:st.selAct[1],qtyBased:st.selAct[2],unit:st.selAct[3],
+  activityId:st.selAct.id,activityName:st.selAct.name,qtyBased:st.selAct.qtyBased,unit:st.selAct.unit,
   status:'active',startTime:Date.now(),totalPausedMs:0,pausedAt:null});
  saveSessions(arr);loadForMe();go('home');
+}
+async function quickStart(id){
+ if(!st.selBed||st.busy)return;
+ st.selAct=actById(id);
+ await confirmStart();
 }
 function localUpdate(id,patch){
  const arr=allSessions();const idx=arr.findIndex(s=>s.id===id);if(idx<0)return;
@@ -179,9 +251,13 @@ async function confirmComplete(id){
  st.completingId=null;render();
 }
 
+function connPill(){
+ return `<div class="conn-pill ${st.connected?'':'off'}"><span class="dot"></span>${st.connected?'Connected':'Offline'}</div>`;
+}
 function header(){
  if(!st.me)return'';
- return `<div class="topbar"><div><div class="name">${esc(st.me.name)}</div><div class="role">${esc(st.me.role)}</div></div>
+ return `${connPill()}
+ <div class="topbar"><div><div class="name">${esc(st.me.name)}</div><div class="role">${esc(st.me.role)}</div></div>
  <button class="btn secondary" onclick="doLogout()">Log Out</button></div>`;
 }
 function errBanner(){return st.err?`<div class="banner">${esc(st.err)}</div>`:'';}
@@ -205,8 +281,9 @@ function renderHome(){
  const active=st.sessions.filter(s=>s.status==='active'||s.status==='paused');
  const done=st.sessions.filter(s=>s.status==='completed').slice(0,15);
  return `${header()}
- <div class="row" style="margin-bottom:6px;"><h1 style="flex:2;">My Active Sessions</h1>
+ <div class="row" style="margin-bottom:2px;"><h1 style="flex:2;">My Active Sessions</h1>
  <button class="btn secondary" style="flex:1;" onclick="loadForMe();render()">Refresh</button></div>
+ <p class="sub" style="margin:0 0 10px;">Logged in as ${esc(st.me.name)} (${esc(shortName(st.me.name))})</p>
  ${errBanner()}
  ${active.length===0?'<p class="sub">No active tasks right now. Scan a bed to start one.</p>':
    active.map(s=>{
@@ -243,9 +320,10 @@ function renderHome(){
 function bedResultsHtml(){
  const q=(st.scanQuery||'').trim().toUpperCase();
  const results=q?allBeds().filter(b=>b.includes(q)).slice(0,30):[];
- return results.length?results.map(b=>`<div class="bed-row" onclick="selectBed('${b}')">
-   <div><div class="bed-id">${b}</div><div class="sub">${esc(bedBlock(b))} · ${esc(BED_NOTES[b]||'Available')}</div></div>
-   <div class="sub">›</div></div>`).join(''):`<p class="sub">${q?'No matching beds.':'Type a bed ID or block prefix (B1, B2, B3, B4, Z5) to search.'}</p>`;
+ return results.length?results.map(b=>{const d=bedDetail(b);
+   return `<div class="bed-row" onclick="selectBed('${b}')">
+   <div><div class="bed-id">${b}</div><div class="sub">${esc(d.block)} · ${esc(d.cropName?('Growing '+d.cropName):d.status)}</div></div>
+   <div class="sub">›</div></div>`;}).join(''):`<p class="sub">${q?'No matching beds.':'Type a bed ID or block prefix (B1, B2, B3, B4, Z5) to search.'}</p>`;
 }
 function onScanQueryInput(v){
  st.scanQuery=v;
@@ -265,15 +343,38 @@ function renderScan(){
  <p class="link" onclick="go('home')">‹ Back to My Sessions</p>`;
 }
 
-function renderActivity(){
+function bedHistoryHtml(bedId){
+ const rows=ACTIVITY_LOG_SNAPSHOT[bedId]||[];
+ if(!rows.length)return '<div class="hist">No prior activity logged for this bed yet.</div>';
+ return '<div class="hist">'+rows.map(r=>`<div class="hist-row">${esc(r.activityName)} — ${esc(r.workerId)} (${new Date(r.endTime||r.startTime).toLocaleDateString()})</div>`).join('')+'</div>';
+}
+
+function renderAssignment(){
+ const d=bedDetail(st.selBed);
+ const worker=ACTIVITIES.filter(a=>a.workerExec);
+ const quick=QUICK_ACTIONS.map(q=>{
+  const a=actById(q.id);if(!a)return'';
+  return `<button class="qa-btn" ${st.busy?'disabled':''} onclick="quickStart('${a.id}')"><span class="qa-icon">${q.icon}</span><span>${esc(q.label)}</span></button>`;
+ }).join('');
  return `${header()}
- <p class="link" onclick="go('scan')">‹ Back</p>
- <h1>Select Activity</h1>
- <div class="card"><div style="font-weight:700;">${esc(st.selBed)} · ${esc(bedBlock(st.selBed))}</div>
- <div class="sub">${esc(BED_NOTES[st.selBed]||'Available')}</div></div>
+ <p class="link" onclick="go('scan')" style="margin-top:0;">‹ Cancel / Rescan</p>
+ <h1>Confirm Assignment</h1>
+ <div class="card">
+  <div style="font-weight:700;font-size:16px;">📍 Bed ${esc(d.bedId)} <span class="sub" style="font-weight:400;">(Block ${esc(d.block)}${d.zone?' · Zone '+esc(d.zone):''})</span></div>
+  <div class="detail-row">🌱 Crop: ${d.cropName?esc(d.cropName):'—'}</div>
+  <div class="detail-row">🏷️ Cohort: ${d.cohortId?esc(d.cohortId):'—'}</div>
+  <div class="detail-row">📋 Field Status: ${esc(d.status)}</div>
+  <p class="link" style="margin-top:10px;margin-bottom:0;" onclick="st.showHistory=!st.showHistory;render()">${st.showHistory?'▾':'▸'} Bed History</p>
+  ${st.showHistory?bedHistoryHtml(d.bedId):''}
+ </div>
  ${errBanner()}
- ${ACTIVITIES.map((a,i)=>`<button class="act-btn ${st.selAct&&st.selAct[0]===a[0]?'sel':''}" onclick="selectAct(${i})">${esc(a[1])}</button>`).join('')}
- <button class="btn block" ${st.selAct&&!st.busy?'':'disabled'} onclick="confirmStart()">${st.busy?'Starting…':'Start Task ▶'}</button>`;
+ <h1 style="font-size:16px;margin-top:16px;">Field Actions</h1>
+ <div class="qa-grid">${quick}</div>
+ <p class="link" onclick="st.showAllActs=!st.showAllActs;render()">${st.showAllActs?'▾':'▸'} Or Choose Any Activity</p>
+ ${st.showAllActs?worker.map(a=>`<button class="act-btn ${st.selAct&&st.selAct.id===a.id?'sel':''}" onclick="selectAct('${a.id}')">${esc(a.name)}</button>`).join(''):''}
+ <button class="btn block" style="margin-top:10px;" ${st.selAct&&!st.busy?'':'disabled'} onclick="confirmStart()">${st.busy?'Starting…':'▶ Start Task'}</button>
+ <button class="btn secondary block" style="margin-top:8px;" onclick="go('scan')">Cancel / Rescan</button>
+ <p class="link" onclick="go('home')">‹ Back to My Sessions</p>`;
 }
 
 function render(){
@@ -281,7 +382,7 @@ function render(){
  if(st.screen==='login')el.innerHTML=renderLogin();
  else if(st.screen==='home')el.innerHTML=renderHome();
  else if(st.screen==='scan')el.innerHTML=renderScan();
- else if(st.screen==='activity')el.innerHTML=renderActivity();
+ else if(st.screen==='assignment')el.innerHTML=renderAssignment();
  if(tickTimer)clearInterval(tickTimer);
  if(st.screen==='home'&&st.sessions.some(s=>s.status==='active'))tickTimer=setInterval(render,1000);
 }
