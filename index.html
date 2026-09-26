@@ -339,7 +339,9 @@ function renderScan(){
  <button class="btn block" style="margin-top:10px;" onclick="processScan()">Process Scan</button>
  ${errBanner()}
  <p class="sub" style="margin-top:18px;">Or Search Beds (no camera needed)</p>
- <div class="card" id="bedResults">${bedResultsHtml()}</div>
+ <input id="bedSearchBox" type="text" placeholder="Type a bed ID or block prefix (B1, B2, B3, B4, Z5)" value="${esc(st.scanQuery)}"
+   oninput="onScanQueryInput(this.value)" onkeydown="if(event.key==='Enter')processScan()">
+ <div class="card" id="bedResults" style="margin-top:10px;">${bedResultsHtml()}</div>
  <p class="link" onclick="go('home')">‹ Back to My Sessions</p>`;
 }
 
