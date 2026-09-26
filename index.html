@@ -24,7 +24,7 @@ label{font-size:13px;color:var(--sub);display:block;margin-bottom:4px;}
 .btn.warn{background:var(--warn);}
 .btn.block{width:100%;}
 .btn[disabled]{opacity:.45;pointer-events:none;}
-input[type=text],input[type=password]{width:100%;padding:13px;border-radius:var(--radius);border:1.5px solid var(--border);font-size:16px;background:var(--bg);color:var(--text);}
+input[type=text],input[type=password],input[type=number]{width:100%;padding:13px;border-radius:var(--radius);border:1.5px solid var(--border);font-size:16px;background:var(--bg);color:var(--text);}
 .sub{color:var(--sub);font-size:13px;}
 .center{text-align:center;}
 .timer{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;}
@@ -36,32 +36,48 @@ input[type=text],input[type=password]{width:100%;padding:13px;border-radius:var(
 .link{color:var(--accent);text-decoration:none;font-size:14px;display:inline-block;margin-top:10px;cursor:pointer;}
 .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--accent);color:#fff;}
 .badge.paused{background:var(--warn);}
-.err{color:var(--warn);font-size:13px;margin-top:8px;}
+.err{color:var(--warn);font-size:13px;margin:8px 0;}
+.banner{background:var(--warn);color:#fff;padding:10px 12px;border-radius:var(--radius);font-size:13px;margin-bottom:10px;}
 .act-btn{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:8px;font-size:15px;color:var(--text);cursor:pointer;}
 .act-btn.sel{border-color:var(--accent);background:rgba(47,107,60,0.12);}
+.chk{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;}
 </style>
 </head>
 <body>
 <div id="app" class="wrap"></div>
 <script>
-/* ---- Seed reference data from VPOS_System.xlsx ---- */
-const WORKERS=[
-{id:'lisa',name:'Lisa Griffin',role:'Worker',pin:'1234'},
-{id:'james',name:'James Clay',role:'Worker',pin:'2345'},
-{id:'jon',name:'Jon Creem',role:'Worker',pin:'3456'},
-{id:'linda',name:'Linda May',role:'Worker',pin:'4567'},
-{id:'jessica',name:'Jessica Luka',role:'Worker',pin:'5678'},
-{id:'usr-manager1',name:'Chris Kenny',role:'Manager',pin:'9999'},
-{id:'usr-founder1',name:'Kisanga',role:'Founder',pin:'0000'}
-];
+/* ================= Backend wiring ================= */
+const API_URL='https://script.google.com/macros/s/AKfycbw0dOXaMs3iykTuhv3heOMyQck0i8dJYjO_To60lIOtsYGuL1Lshmxju8Gopt3SWKNy/exec';
+const APP_KEY='WorkerApp';
+
+async function api(action,payload){
+ payload=Object.assign({action:action},payload||{});
+ if(st.token && action!=='login') payload.token=st.token;
+ try{
+  const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+  return await res.json();
+ }catch(e){ return {ok:false,error:'Could not reach the server. Check your connection.',code:'NETWORK_ERROR'}; }
+}
+/** returns true if it handled (logged the user out) a dead-session error */
+function handleAuthError(r){
+ if(!r.ok && r.code==='UNAUTHENTICATED'){ st.err=r.error||'Your session ended. Sign in again.'; doLogout(false); return true; }
+ return false;
+}
+
+/* ================= Static reference data (from VPOS_System.xlsx) =================
+   No worker-facing read endpoint exists yet on the backend for live bed/cohort
+   status, so this list is the workbook's last-known layout, not live data. */
 const BLOCKS=[['B1','Block 1',55],['B2','Block 2',55],['B3','Block 3',55],['B4','Block 4',55],['Z5','Zone 5',11]];
-const BED_NOTES={'B4-01':'Growing: Beets (BET-C01)'};
-const ACTIVITIES=[['ACT_001','Field Prep'],['ACT_002','Bed Shaping'],['ACT_003','Mulching'],['ACT_004','Trellising Setup'],
-['ACT_005','Irrigation Setup'],['ACT_006','Planting'],['ACT_007','Direct Seeding'],['ACT_008','Transplanting'],
-['ACT_009','Replanting'],['ACT_010','Thinning'],['ACT_011','Weeding'],['ACT_012','Fertilizing'],
-['ACT_013','Irrigation Check'],['ACT_014','Pest Control'],['ACT_015','Disease Control'],['ACT_016','Pruning'],
-['ACT_017','Trellising'],['ACT_018','Harvest'],['ACT_019','Post-Harvest Cleanup'],['ACT_020','Field Turnover'],
-['ACT_022','Crop Cleanup'],['ACT_023','Scouting']];
+const BED_NOTES={'B4-01':'Snapshot: growing Beets (BET-C01)'};
+// [Activity_ID, Activity_Name, Is_Quantity_Based, Default_Unit]
+const ACTIVITIES=[['ACT_001','FieldPrep',false,''],['ACT_002','BedShaping',false,''],['ACT_003','Mulching',false,''],
+['ACT_004','TrellisingSetup',false,''],['ACT_005','IrrigationSetup',false,''],['ACT_006','Planting',false,''],
+['ACT_007','DirectSeeding',false,''],['ACT_008','Transplanting',false,''],['ACT_009','Replanting',false,''],
+['ACT_010','Thinning',false,''],['ACT_011','Weeding',false,''],['ACT_012','Fertilizing',true,'lbs'],
+['ACT_013','IrrigationCheck',false,''],['ACT_014','PestControl',false,''],['ACT_015','DiseaseControl',false,''],
+['ACT_016','Pruning',false,''],['ACT_017','Trellising',false,''],['ACT_018','Harvest',true,'lbs'],
+['ACT_019','PostHarvestCleanup',false,''],['ACT_020','FieldTurnover',false,''],['ACT_022','CropCleanup',false,''],
+['ACT_023','Scouting',false,'']];
 
 function allBeds(){const out=[];for(const[p,,n]of BLOCKS){for(let i=1;i<=n;i++)out.push(p+'-'+String(i).padStart(2,'0'));}return out;}
 function bedBlock(id){const p=id.split('-')[0];const b=BLOCKS.find(x=>x[0]===p);return b?b[1]:'';}
@@ -71,29 +87,45 @@ function elapsed(s){const paused=s.totalPausedMs||0;if(s.status==='paused')retur
 if(s.status==='completed')return s.endTime-s.startTime-paused;return Date.now()-s.startTime-paused;}
 function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-/* ---- Local storage (this file runs standalone, so all data lives in this browser only) ---- */
+/* ================= Local mirror (this device only) =================
+   Sessions actually live in FIELD_LIVE_SESSION / FIELD_ACTIVITY_LOG on the
+   server; there's no "get my sessions" endpoint yet, so this device keeps a
+   local copy of what IT started so the two screens below have something to
+   show and survive a refresh. */
 function allSessions(){try{return JSON.parse(localStorage.getItem('vpos_sessions')||'[]');}catch(e){return[];}}
 function saveSessions(arr){localStorage.setItem('vpos_sessions',JSON.stringify(arr));}
 
 let tickTimer=null;
-let st={screen:'login',me:null,nameInput:'',pinInput:'',err:null,sessions:[],scanQuery:'',selBed:null,selAct:null};
+let st={screen:'login',me:null,token:null,workerIdInput:'',pinInput:'',err:null,busy:false,
+ sessions:[],scanQuery:'',selBed:null,selAct:null,completingId:null,qty:'',unit:'',notes:'',isFinal:false};
 
-const savedId=localStorage.getItem('vpos_worker');
-if(savedId){const w=WORKERS.find(x=>x.id===savedId);if(w){st.me=w;st.screen='home';}}
-
-function loadForMe(){st.sessions=allSessions().filter(s=>s.workerId===st.me.id).sort((a,b)=>b.startTime-a.startTime);}
+try{
+ const sess=JSON.parse(localStorage.getItem('vpos_session')||'null');
+ if(sess&&sess.token&&sess.me){st.me=sess.me;st.token=sess.token;st.screen='home';}
+}catch(e){}
+function loadForMe(){st.sessions=allSessions().filter(s=>s.workerId===st.me.workerId).sort((a,b)=>b.startTime-a.startTime);}
 if(st.me)loadForMe();
 
 function go(screen){st.screen=screen;st.err=null;render();}
 
-function attemptLogin(){
- const n=(st.nameInput||'').trim().toLowerCase();
- const w=WORKERS.find(x=>x.name.toLowerCase()===n||x.id.toLowerCase()===n);
- if(!w||w.pin!==(st.pinInput||'')){st.err='Name or PIN not recognized.';render();return;}
- st.me=w;localStorage.setItem('vpos_worker',w.id);st.nameInput='';st.pinInput='';st.err=null;
+async function attemptLogin(){
+ st.err=null;
+ const id=(st.workerIdInput||'').trim();
+ if(!id||!st.pinInput){st.err='Enter your Worker ID and PIN.';render();return;}
+ st.busy=true;render();
+ const r=await api('login',{workerId:id,pin:st.pinInput,app:APP_KEY,device:(navigator.userAgent||'').slice(0,100)});
+ st.busy=false;
+ if(!r.ok){st.err=r.error||'Login failed.';render();return;}
+ st.me={workerId:r.data.workerId,name:r.data.name,role:r.data.role};
+ st.token=r.data.token;
+ localStorage.setItem('vpos_session',JSON.stringify({me:st.me,token:st.token}));
+ st.workerIdInput='';st.pinInput='';
  loadForMe();go('home');
 }
-function logOut(){localStorage.removeItem('vpos_worker');st.me=null;st.sessions=[];go('login');}
+function doLogout(callServer){
+ if(callServer!==false && st.token) api('logout',{device:(navigator.userAgent||'').slice(0,100)});
+ localStorage.removeItem('vpos_session');st.me=null;st.token=null;st.sessions=[];go('login');
+}
 
 function startNewTask(){st.scanQuery='';st.selBed=null;st.selAct=null;go('scan');}
 function processScan(){
@@ -104,41 +136,68 @@ function processScan(){
 }
 function selectBed(id){st.selBed=id;st.selAct=null;go('activity');}
 function selectAct(idx){st.selAct=ACTIVITIES[idx];render();}
-function confirmStart(){
- if(!st.selBed||!st.selAct)return;
+
+async function confirmStart(){
+ if(!st.selBed||!st.selAct||st.busy)return;
+ st.busy=true;st.err=null;render();
+ const r=await api('start-activity',{bedId:st.selBed,activityName:st.selAct[1]});
+ st.busy=false;
+ if(handleAuthError(r))return;
+ if(!r.ok){st.err=r.error||('Could not start that activity ('+(r.code||'error')+').');render();return;}
  const arr=allSessions();
- arr.push({id:'s_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),workerId:st.me.id,workerName:st.me.name,
-  bedId:st.selBed,block:bedBlock(st.selBed),activityId:st.selAct[0],activityName:st.selAct[1],
+ arr.push({id:r.data.sessionId,workerId:st.me.workerId,bedId:st.selBed,block:bedBlock(st.selBed),
+  activityId:st.selAct[0],activityName:st.selAct[1],qtyBased:st.selAct[2],unit:st.selAct[3],
   status:'active',startTime:Date.now(),totalPausedMs:0,pausedAt:null});
  saveSessions(arr);loadForMe();go('home');
 }
-function updateSession(id,patch){
+function localUpdate(id,patch){
  const arr=allSessions();const idx=arr.findIndex(s=>s.id===id);if(idx<0)return;
- arr[idx]={...arr[idx],...patch};saveSessions(arr);loadForMe();render();
+ arr[idx]=Object.assign(arr[idx],patch);saveSessions(arr);loadForMe();
 }
-function pauseS(id){updateSession(id,{status:'paused',pausedAt:Date.now()});}
-function resumeS(id){const s=st.sessions.find(x=>x.id===id);
- updateSession(id,{status:'active',pausedAt:null,totalPausedMs:(s.totalPausedMs||0)+(Date.now()-s.pausedAt)});}
-function completeS(id){updateSession(id,{status:'completed',endTime:Date.now()});}
+async function pauseS(id){
+ st.err=null;const r=await api('pause-activity',{sessionId:id});
+ if(handleAuthError(r))return;
+ if(!r.ok){st.err='Pause is not wired up on the server yet ('+(r.code||'error')+'). Ask your developer to add a pause-activity route.';render();return;}
+ localUpdate(id,{status:'paused',pausedAt:Date.now()});render();
+}
+async function resumeS(id){
+ const s=st.sessions.find(x=>x.id===id);st.err=null;
+ const r=await api('resume-activity',{sessionId:id});
+ if(handleAuthError(r))return;
+ if(!r.ok){st.err='Resume is not wired up on the server yet ('+(r.code||'error')+').';render();return;}
+ localUpdate(id,{status:'active',pausedAt:null,totalPausedMs:(s.totalPausedMs||0)+(Date.now()-s.pausedAt)});render();
+}
+function openComplete(id){st.completingId=id;st.qty='';st.unit=(st.sessions.find(x=>x.id===id)||{}).unit||'';st.notes='';st.isFinal=false;render();}
+async function confirmComplete(id){
+ const s=st.sessions.find(x=>x.id===id);if(!s||st.busy)return;
+ st.busy=true;st.err=null;render();
+ const r=await api('end-activity',{sessionId:id,quantity:st.qty,unit:st.unit,notes:st.notes,isFinalHarvest:!!st.isFinal});
+ st.busy=false;
+ if(handleAuthError(r))return;
+ if(!r.ok){st.err=r.error||('Could not complete that task ('+(r.code||'error')+').');render();return;}
+ localUpdate(id,{status:'completed',endTime:Date.now()});
+ st.completingId=null;render();
+}
 
 function header(){
  if(!st.me)return'';
  return `<div class="topbar"><div><div class="name">${esc(st.me.name)}</div><div class="role">${esc(st.me.role)}</div></div>
- <button class="btn secondary" onclick="logOut()">Log Out</button></div>`;
+ <button class="btn secondary" onclick="doLogout()">Log Out</button></div>`;
 }
+function errBanner(){return st.err?`<div class="banner">${esc(st.err)}</div>`:'';}
 
 function renderLogin(){
- return `<h1 class="center">🌱 VPOS Field App</h1><p class="sub center">Enter your name and PIN to log in</p>
+ return `<h1 class="center">🌱 VPOS Field App</h1><p class="sub center">Sign in with your Worker ID and PIN</p>
  <div class="card">
- <label>Name</label>
- <input type="text" placeholder="e.g. Lisa Griffin" value="${esc(st.nameInput)}"
-   oninput="st.nameInput=this.value" onkeydown="if(event.key==='Enter')document.getElementById('pinBox').focus()">
+ <label>Worker ID</label>
+ <input type="text" placeholder="e.g. lisa" value="${esc(st.workerIdInput)}"
+   oninput="st.workerIdInput=this.value" onkeydown="if(event.key==='Enter')document.getElementById('pinBox').focus()">
  <div style="height:10px;"></div>
  <label>PIN</label>
- <input id="pinBox" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN" value="${esc(st.pinInput)}"
-   oninput="st.pinInput=this.value.replace(/\\D/g,'').slice(0,4)" onkeydown="if(event.key==='Enter')attemptLogin()">
- ${st.err?`<p class="err">${esc(st.err)}</p>`:''}
- <button class="btn block" style="margin-top:14px;" onclick="attemptLogin()">Log In</button>
+ <input id="pinBox" type="password" inputmode="numeric" maxlength="8" placeholder="PIN" value="${esc(st.pinInput)}"
+   oninput="st.pinInput=this.value.replace(/\\D/g,'').slice(0,8)" onkeydown="if(event.key==='Enter')attemptLogin()">
+ ${errBanner()}
+ <button class="btn block" style="margin-top:14px;" ${st.busy?'disabled':''} onclick="attemptLogin()">${st.busy?'Signing in…':'Log In'}</button>
  </div>`;
 }
 
@@ -148,18 +207,30 @@ function renderHome(){
  return `${header()}
  <div class="row" style="margin-bottom:6px;"><h1 style="flex:2;">My Active Sessions</h1>
  <button class="btn secondary" style="flex:1;" onclick="loadForMe();render()">Refresh</button></div>
+ ${errBanner()}
  ${active.length===0?'<p class="sub">No active tasks right now. Scan a bed to start one.</p>':
-   active.map(s=>`<div class="card">
+   active.map(s=>{
+    const completing=st.completingId===s.id;
+    return `<div class="card">
     <div class="row" style="margin-bottom:6px;"><div>
       <span class="badge ${s.status==='paused'?'paused':''}">${s.status.toUpperCase()}</span>
       <div style="font-weight:700;margin-top:6px;">${esc(s.bedId)} · ${esc(s.block)}</div>
       <div class="sub">${esc(s.activityName)}</div></div>
       <div class="timer" style="text-align:right;">${fmt(elapsed(s))}</div></div>
-    <div class="row">
-      ${s.status==='active'?`<button class="btn secondary" onclick="pauseS('${s.id}')">Pause</button>`
-        :`<button class="btn secondary" onclick="resumeS('${s.id}')">Resume</button>`}
-      <button class="btn warn" onclick="completeS('${s.id}')">Complete</button>
-    </div></div>`).join('')}
+    ${completing?`
+      ${s.qtyBased?`<label>Quantity (${esc(s.unit)})</label><input type="number" value="${esc(st.qty)}" oninput="st.qty=this.value">`:''}
+      ${s.activityId==='ACT_018'?`<div class="chk"><input type="checkbox" id="finalChk" ${st.isFinal?'checked':''} onchange="st.isFinal=this.checked"><label for="finalChk" style="margin:0;">Final harvest for this cohort</label></div>`:''}
+      <label style="margin-top:8px;">Notes (optional)</label><input type="text" value="${esc(st.notes)}" oninput="st.notes=this.value">
+      <div class="row">
+        <button class="btn secondary" onclick="st.completingId=null;render()">Cancel</button>
+        <button class="btn warn" ${st.busy?'disabled':''} onclick="confirmComplete('${s.id}')">${st.busy?'Saving…':'Confirm Complete'}</button>
+      </div>`:`
+      <div class="row">
+        ${s.status==='active'?`<button class="btn secondary" onclick="pauseS('${s.id}')">Pause</button>`
+          :`<button class="btn secondary" onclick="resumeS('${s.id}')">Resume</button>`}
+        <button class="btn warn" onclick="openComplete('${s.id}')">Complete</button>
+      </div>`}
+    </div>`;}).join('')}
  <button class="btn block" style="margin:14px 0;" onclick="startNewTask()">+ Start New Task</button>
  <h1>Completed History</h1>
  ${done.length===0?'<p class="sub">No completed tasks yet.</p>':
@@ -178,7 +249,7 @@ function renderScan(){
  <input type="text" placeholder="e.g. B1-01" value="${esc(st.scanQuery)}"
    oninput="st.scanQuery=this.value" onkeydown="if(event.key==='Enter')processScan()">
  <button class="btn block" style="margin-top:10px;" onclick="processScan()">Process Scan</button>
- ${st.err?`<p class="err">${esc(st.err)}</p>`:''}
+ ${errBanner()}
  <p class="sub" style="margin-top:18px;">Or Search Beds (no camera needed)</p>
  <div class="card">${results.length?results.map(b=>`<div class="bed-row" onclick="selectBed('${b}')">
    <div><div class="bed-id">${b}</div><div class="sub">${esc(bedBlock(b))} · ${esc(BED_NOTES[b]||'Available')}</div></div>
@@ -192,8 +263,9 @@ function renderActivity(){
  <h1>Select Activity</h1>
  <div class="card"><div style="font-weight:700;">${esc(st.selBed)} · ${esc(bedBlock(st.selBed))}</div>
  <div class="sub">${esc(BED_NOTES[st.selBed]||'Available')}</div></div>
+ ${errBanner()}
  ${ACTIVITIES.map((a,i)=>`<button class="act-btn ${st.selAct&&st.selAct[0]===a[0]?'sel':''}" onclick="selectAct(${i})">${esc(a[1])}</button>`).join('')}
- <button class="btn block" ${st.selAct?'':'disabled'} onclick="confirmStart()">Start Task ▶</button>`;
+ <button class="btn block" ${st.selAct&&!st.busy?'':'disabled'} onclick="confirmStart()">${st.busy?'Starting…':'Start Task ▶'}</button>`;
 }
 
 function render(){
