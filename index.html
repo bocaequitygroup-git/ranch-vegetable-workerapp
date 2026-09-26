@@ -240,20 +240,28 @@ function renderHome(){
     <div class="timer" style="text-align:right;font-size:18px;">${fmt(elapsed(s))}</div></div></div>`).join('')}`;
 }
 
-function renderScan(){
+function bedResultsHtml(){
  const q=(st.scanQuery||'').trim().toUpperCase();
  const results=q?allBeds().filter(b=>b.includes(q)).slice(0,30):[];
+ return results.length?results.map(b=>`<div class="bed-row" onclick="selectBed('${b}')">
+   <div><div class="bed-id">${b}</div><div class="sub">${esc(bedBlock(b))} · ${esc(BED_NOTES[b]||'Available')}</div></div>
+   <div class="sub">›</div></div>`).join(''):`<p class="sub">${q?'No matching beds.':'Type a bed ID or block prefix (B1, B2, B3, B4, Z5) to search.'}</p>`;
+}
+function onScanQueryInput(v){
+ st.scanQuery=v;
+ const el=document.getElementById('bedResults');
+ if(el)el.innerHTML=bedResultsHtml();
+}
+function renderScan(){
  return `${header()}
  <h1>Scan Location</h1>
  <p class="sub">Scan or Enter QR Code</p>
  <input type="text" placeholder="e.g. B1-01" value="${esc(st.scanQuery)}"
-   oninput="st.scanQuery=this.value" onkeydown="if(event.key==='Enter')processScan()">
+   oninput="onScanQueryInput(this.value)" onkeydown="if(event.key==='Enter')processScan()">
  <button class="btn block" style="margin-top:10px;" onclick="processScan()">Process Scan</button>
  ${errBanner()}
  <p class="sub" style="margin-top:18px;">Or Search Beds (no camera needed)</p>
- <div class="card">${results.length?results.map(b=>`<div class="bed-row" onclick="selectBed('${b}')">
-   <div><div class="bed-id">${b}</div><div class="sub">${esc(bedBlock(b))} · ${esc(BED_NOTES[b]||'Available')}</div></div>
-   <div class="sub">›</div></div>`).join(''):`<p class="sub">${q?'No matching beds.':'Type a bed ID or block prefix (B1, B2, B3, B4, Z5) to search.'}</p>`}</div>
+ <div class="card" id="bedResults">${bedResultsHtml()}</div>
  <p class="link" onclick="go('home')">‹ Back to My Sessions</p>`;
 }
 
