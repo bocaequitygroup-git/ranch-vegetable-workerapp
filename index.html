@@ -191,6 +191,15 @@ function mapServerSession_(r){
  const a=actByName(r.Activity_Name)||{};
  const rawStatus=String(r.Status||'').toUpperCase();
  const isPaused=rawStatus==='PAUSED';
+ // FIX (bug 7 frontend half): a manager-assigned or freshly-reassigned session
+ // lands here with Status=ASSIGNED and a blank Start_Time (see startSession_()/
+ // reassignActivity() in ActivityEngine.gs) - this used to fall through the
+ // isPaused?'paused':'active' check straight into 'active', with no branch for
+ // ASSIGNED at all. That's what made a reassigned task show up already running
+ // (badge ACTIVE, a timer ticking off of an Invalid Date) instead of prompting
+ // the worker to tap Start - the backend was correctly waiting for the worker,
+ // the frontend just had no way to display that wait state.
+ const isAssigned=rawStatus==='ASSIGNED';
  // 'Pause_Reason(s)' is a comma-list parallel to Pause_Time(s) (see ActivityEngine.gs
  // pauseActivity()) - only present once that column's been added to the sheet. The
  // last entry is whichever pause type (Break/Lunch/End of Day) is currently active.
@@ -200,11 +209,14 @@ function mapServerSession_(r){
   id:r.Session_ID, workerId:st.me.workerId, bedId:r.Bed_ID, block:bedBlock(r.Bed_ID),
   activityId:a.id||'', activityName:r.Activity_Name||'', qtyBased:!!a.qtyBased, unit:a.unit||'',
   // An EXCEPTION row is still an open session, so it still renders as 'active'
-  // rather than disappearing (only ACTIVE/PAUSED/EXCEPTION reach here at all -
-  // COMPLETED rows drop out of get-my-sessions).
-  status: isPaused?'paused':'active',
+  // rather than disappearing (only ACTIVE/PAUSED/ASSIGNED/EXCEPTION reach here at
+  // all - COMPLETED rows drop out of get-my-sessions).
+  status: isAssigned?'assigned':(isPaused?'paused':'active'),
   pauseType: isPaused?(reasons[reasons.length-1]||''):'',
-  startTime:new Date(r.Start_Time).getTime(), totalPausedMs:ps.totalPausedMs, pausedAt:ps.pausedAt,
+  // Start_Time is genuinely blank while ASSIGNED (no clock running yet) - leave
+  // startTime null rather than new Date('').getTime() (NaN), so nothing downstream
+  // tries to render a bogus elapsed time for a task that hasn't started.
+  startTime: isAssigned?null:new Date(r.Start_Time).getTime(), totalPausedMs:ps.totalPausedMs, pausedAt:ps.pausedAt,
   // Set only when a manager assigned/reassigned this session (worker self-started
   // tasks have no Manager_ID) - see reassignActivity()/get-my-sessions in the backend.
   managerName:r.Manager_Name||'', reassignedFromName:r.Reassigned_From_Name||r.Reassigned_From||'',
@@ -292,6 +304,27 @@ async function quickStart(id){
  st.selAct=actById(id);
  await confirmStart();
 }
+/** FIX (bug 7 frontend half): starts a session that's sitting here as
+ *  'assigned' (manager-assigned or just reassigned to this worker). Reuses
+ *  the same start-activity route confirmStart() calls - the backend's
+ *  findAssignedSession_(auth.workerId,bedId,activityName) finds this exact
+ *  row (Status=ASSIGNED already, from startSession_()/reassignActivity() in
+ *  ActivityEngine.gs) and activates it in place via activateAssignedSession_(),
+ *  rather than creating a duplicate session the way confirmStart()'s own
+ *  optimistic local push would if reused as-is here. No local cache push is
+ *  needed either - this session is already in st.sessions/localStorage from
+ *  the server sync that surfaced it as 'assigned' in the first place; a
+ *  fresh syncActiveSessions_() after the call picks up its new ACTIVE state
+ *  and real Start_Time. */
+async function confirmStartAssigned(id,bedId,activityName){
+ if(st.busy)return;
+ st.busy=true;st.err=null;render();
+ const r=await api('start-activity',{bedId,activityName});
+ st.busy=false;
+ if(handleAuthError(r))return;
+ if(!r.ok){st.err=r.error||('Could not start that activity ('+(r.code||'error')+').');render();return;}
+ syncActiveSessions_();
+}
 /** Patches session `id` in st.sessions directly, so the change shows immediately,
  *  then mirrors it into the local completed-history cache. Most active/paused sessions
  *  come from the server (syncActiveSessions_) and were never written into that cache --
@@ -371,7 +404,13 @@ function renderLogin(){
 }
 
 function renderHome(){
- const active=st.sessions.filter(s=>s.status==='active'||s.status==='paused');
+ // FIX (bug 7 frontend half): 'assigned' sessions (manager-assigned or just
+ // reassigned to this worker, not yet started) belong on this list too - they
+ // were already coming back from get-my-sessions (it applies no status filter),
+ // they just fell out of this specific filter, which only ever asked for
+ // active/paused. Without this they'd have been invisible here even after
+ // mapServerSession_ started tagging them correctly.
+ const active=st.sessions.filter(s=>s.status==='active'||s.status==='paused'||s.status==='assigned');
  const done=st.sessions.filter(s=>s.status==='completed').slice(0,15);
  return `${header()}
  <div class="row" style="margin-bottom:2px;"><h1 style="flex:2;">My Active Sessions</h1>
@@ -382,16 +421,29 @@ function renderHome(){
    active.map(s=>{
     const completing=st.completingId===s.id;
     const pausing=st.pausingId===s.id;
+    // FIX (bug 7 frontend half): an 'assigned' session has no clock running and
+    // must not offer Pause/Resume/Complete - none of those are valid until the
+    // worker actually starts it. Badge reads WAITING, the timer column shows
+    // "Not started" instead of a fmt(elapsed()) call (elapsed() has no branch
+    // for a null startTime), and the only action is Start, which reuses the
+    // existing start-activity route - it finds this exact ASSIGNED row via
+    // findAssignedSession_(workerId,bedId,activityName) and activates it in
+    // place (see startActivity() in ActivityEngine.gs), the same one the
+    // manager's assignment or reassignment already created.
+    const assigned=s.status==='assigned';
     return `<div class="card">
     <div class="row" style="margin-bottom:6px;"><div>
-      <span class="badge ${s.status==='paused'?'paused':''}">${s.status.toUpperCase()}${s.status==='paused'&&s.pauseType?' · '+esc(s.pauseType):''}</span>
+      <span class="badge ${s.status==='paused'?'paused':''}">${assigned?'WAITING':s.status.toUpperCase()}${s.status==='paused'&&s.pauseType?' · '+esc(s.pauseType):''}</span>
       <div style="font-weight:700;margin-top:6px;">${esc(s.bedId)} · ${esc(s.block)}</div>
       <div class="sub">${esc(s.activityName)}</div>
       ${s.description?`<div class="sub">${esc(s.description)}</div>`:''}
       ${s.reassignedFromName?`<div class="sub">↩ Reassigned from ${esc(s.reassignedFromName)}${s.managerName?' by '+esc(s.managerName):''}</div>`
         :s.managerName?`<div class="sub">Assigned by ${esc(s.managerName)}</div>`:''}</div>
-      <div class="timer" style="text-align:right;">${fmt(elapsed(s))}</div></div>
-    ${completing?`
+      <div class="timer" style="text-align:right;">${assigned?'Not started':fmt(elapsed(s))}</div></div>
+    ${assigned?`
+      <div class="row">
+        <button class="btn block" ${st.busy?'disabled':''} onclick="confirmStartAssigned('${s.id}','${esc(s.bedId)}','${esc(s.activityName)}')">${st.busy?'Starting…':'Start'}</button>
+      </div>`:completing?`
       ${s.qtyBased?`<label>Quantity (${esc(s.unit)})</label><input type="number" value="${esc(st.qty)}" oninput="st.qty=this.value">`:''}
       ${s.activityId==='ACT_018'?`<div class="chk"><input type="checkbox" id="finalChk" ${st.isFinal?'checked':''} onchange="st.isFinal=this.checked"><label for="finalChk" style="margin:0;">Final harvest for this cohort</label></div>`:''}
       <label style="margin-top:8px;">Notes (optional)</label><input type="text" value="${esc(st.notes)}" oninput="st.notes=this.value">
