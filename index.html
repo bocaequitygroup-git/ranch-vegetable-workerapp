@@ -175,9 +175,9 @@ function mapServerSession_(r){
  return {
   id:r.Session_ID, workerId:st.me.workerId, bedId:r.Bed_ID, block:bedBlock(r.Bed_ID),
   activityId:a.id||'', activityName:r.Activity_Name||'', qtyBased:!!a.qtyBased, unit:a.unit||'',
-  // FIELD_LIVE_SESSION today only ever carries ACTIVE or EXCEPTION (pause/resume are not
-  // wired up server-side - see pauseS/resumeS below) - an EXCEPTION row is still an open
-  // session, so it still renders as 'active' rather than disappearing.
+  // An EXCEPTION row is still an open session, so it still renders as 'active'
+  // rather than disappearing (only ACTIVE/PAUSED/EXCEPTION reach here at all -
+  // COMPLETED rows drop out of get-my-sessions).
   status: rawStatus==='PAUSED'?'paused':'active',
   startTime:new Date(r.Start_Time).getTime(), totalPausedMs:0, pausedAt:null
  };
@@ -263,14 +263,14 @@ function localUpdate(id,patch){
 async function pauseS(id){
  st.err=null;const r=await api('pause-activity',{sessionId:id});
  if(handleAuthError(r))return;
- if(!r.ok){st.err='Pause is not wired up on the server yet ('+(r.code||'error')+'). Ask your developer to add a pause-activity route.';render();return;}
+ if(!r.ok){st.err=r.error||('Could not pause that task ('+(r.code||'error')+').');render();return;}
  localUpdate(id,{status:'paused',pausedAt:Date.now()});render();
 }
 async function resumeS(id){
  const s=st.sessions.find(x=>x.id===id);st.err=null;
  const r=await api('resume-activity',{sessionId:id});
  if(handleAuthError(r))return;
- if(!r.ok){st.err='Resume is not wired up on the server yet ('+(r.code||'error')+').';render();return;}
+ if(!r.ok){st.err=r.error||('Could not resume that task ('+(r.code||'error')+').');render();return;}
  localUpdate(id,{status:'active',pausedAt:null,totalPausedMs:(s.totalPausedMs||0)+(Date.now()-s.pausedAt)});render();
 }
 function openComplete(id){st.completingId=id;st.qty='';st.unit=(st.sessions.find(x=>x.id===id)||{}).unit||'';st.notes='';st.isFinal=false;render();}
