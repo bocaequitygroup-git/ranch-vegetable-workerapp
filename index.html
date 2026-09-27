@@ -169,22 +169,42 @@ function allSessions(){try{return JSON.parse(localStorage.getItem('vpos_sessions
 function saveSessions(arr){localStorage.setItem('vpos_sessions',JSON.stringify(arr));}
 function actByName(name){return ACTIVITIES.find(a=>a.name===name);}
 /** Raw FIELD_LIVE_SESSION row (from get-my-sessions) -> the shape renderHome() expects. */
+function splitList_(v){return String(v||'').split(',').map(x=>x.trim()).filter(x=>x.length);}
+/** Turns a session's Pause_Time(s)/Resume_Time(s) comma-lists (same pairing convention
+ *  computeElapsedMinutes_() uses server-side in ActivityEngine.gs) into what elapsed()
+ *  needs: totalPausedMs is every already-closed pause span added together, pausedAt is
+ *  the start of the still-open pause (or null if the session isn't currently paused).
+ *  mapServerSession_() used to hardcode {totalPausedMs:0, pausedAt:null} for every synced
+ *  session, which made elapsed() compute a huge negative number for anything paused --
+ *  fmt() then clamped that to zero, so every paused timer looked reset. */
+function pauseState_(pauseTimesStr,resumeTimesStr,isPaused){
+ const pauses=splitList_(pauseTimesStr).map(t=>new Date(t).getTime());
+ const resumes=splitList_(resumeTimesStr).map(t=>new Date(t).getTime());
+ let totalPausedMs=0,pausedAt=null;
+ for(let i=0;i<pauses.length;i++){
+  if(i<resumes.length)totalPausedMs+=Math.max(0,resumes[i]-pauses[i]);
+  else pausedAt=pauses[i]; // this one hasn't been resumed yet
+ }
+ return {totalPausedMs, pausedAt: isPaused?pausedAt:null};
+}
 function mapServerSession_(r){
  const a=actByName(r.Activity_Name)||{};
  const rawStatus=String(r.Status||'').toUpperCase();
+ const isPaused=rawStatus==='PAUSED';
  // 'Pause_Reason(s)' is a comma-list parallel to Pause_Time(s) (see ActivityEngine.gs
  // pauseActivity()) - only present once that column's been added to the sheet. The
  // last entry is whichever pause type (Break/Lunch/End of Day) is currently active.
- const reasons=String(r['Pause_Reason(s)']||'').split(',').map(x=>x.trim()).filter(x=>x.length);
+ const reasons=splitList_(r['Pause_Reason(s)']);
+ const ps=pauseState_(r['Pause_Time(s)'],r['Resume_Time(s)'],isPaused);
  return {
   id:r.Session_ID, workerId:st.me.workerId, bedId:r.Bed_ID, block:bedBlock(r.Bed_ID),
   activityId:a.id||'', activityName:r.Activity_Name||'', qtyBased:!!a.qtyBased, unit:a.unit||'',
   // An EXCEPTION row is still an open session, so it still renders as 'active'
   // rather than disappearing (only ACTIVE/PAUSED/EXCEPTION reach here at all -
   // COMPLETED rows drop out of get-my-sessions).
-  status: rawStatus==='PAUSED'?'paused':'active',
-  pauseType: rawStatus==='PAUSED'?(reasons[reasons.length-1]||''):'',
-  startTime:new Date(r.Start_Time).getTime(), totalPausedMs:0, pausedAt:null
+  status: isPaused?'paused':'active',
+  pauseType: isPaused?(reasons[reasons.length-1]||''):'',
+  startTime:new Date(r.Start_Time).getTime(), totalPausedMs:ps.totalPausedMs, pausedAt:ps.pausedAt
  };
 }
 
@@ -264,9 +284,21 @@ async function quickStart(id){
  st.selAct=actById(id);
  await confirmStart();
 }
+/** Patches session `id` in st.sessions directly, so the change shows immediately,
+ *  then mirrors it into the local completed-history cache. Most active/paused sessions
+ *  come from the server (syncActiveSessions_) and were never written into that cache --
+ *  this used to just bail out (idx<0) for them, and the trailing loadForMe() would then
+ *  rebuild st.sessions from the cache alone, making the session disappear from the
+ *  screen until the next full sync. That's why pause/resume looked like it needed a
+ *  refresh to take effect. */
 function localUpdate(id,patch){
- const arr=allSessions();const idx=arr.findIndex(s=>s.id===id);if(idx<0)return;
- arr[idx]=Object.assign(arr[idx],patch);saveSessions(arr);loadForMe();
+ const idx=st.sessions.findIndex(s=>s.id===id);
+ if(idx>=0)st.sessions[idx]=Object.assign({},st.sessions[idx],patch);
+ const cache=allSessions();
+ const cIdx=cache.findIndex(s=>s.id===id);
+ if(cIdx>=0)cache[cIdx]=Object.assign(cache[cIdx],patch);
+ else if(idx>=0)cache.push(st.sessions[idx]);
+ saveSessions(cache);
 }
 /** Opens the pause-type picker for a session (Pause button no longer pauses immediately -
  *  a pause type (Break/Lunch/End of Day) must be selected and logged, per spec). */
