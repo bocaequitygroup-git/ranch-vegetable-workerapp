@@ -172,6 +172,10 @@ function actByName(name){return ACTIVITIES.find(a=>a.name===name);}
 function mapServerSession_(r){
  const a=actByName(r.Activity_Name)||{};
  const rawStatus=String(r.Status||'').toUpperCase();
+ // 'Pause_Reason(s)' is a comma-list parallel to Pause_Time(s) (see ActivityEngine.gs
+ // pauseActivity()) - only present once that column's been added to the sheet. The
+ // last entry is whichever pause type (Break/Lunch/End of Day) is currently active.
+ const reasons=String(r['Pause_Reason(s)']||'').split(',').map(x=>x.trim()).filter(x=>x.length);
  return {
   id:r.Session_ID, workerId:st.me.workerId, bedId:r.Bed_ID, block:bedBlock(r.Bed_ID),
   activityId:a.id||'', activityName:r.Activity_Name||'', qtyBased:!!a.qtyBased, unit:a.unit||'',
@@ -179,13 +183,17 @@ function mapServerSession_(r){
   // rather than disappearing (only ACTIVE/PAUSED/EXCEPTION reach here at all -
   // COMPLETED rows drop out of get-my-sessions).
   status: rawStatus==='PAUSED'?'paused':'active',
+  pauseType: rawStatus==='PAUSED'?(reasons[reasons.length-1]||''):'',
   startTime:new Date(r.Start_Time).getTime(), totalPausedMs:0, pausedAt:null
  };
 }
 
 let tickTimer=null;
 let st={screen:'login',me:null,token:null,workerIdInput:'',pinInput:'',err:null,busy:false,connected:false,
- sessions:[],scanQuery:'',selBed:null,selAct:null,showAllActs:false,showHistory:false,completingId:null,qty:'',unit:'',notes:'',isFinal:false};
+ sessions:[],scanQuery:'',selBed:null,selAct:null,showAllActs:false,showHistory:false,completingId:null,qty:'',unit:'',notes:'',isFinal:false,
+ pausingId:null,pauseReason:''};
+
+const PAUSE_TYPES=['Break','Lunch','End of Day'];
 
 try{
  const sess=JSON.parse(localStorage.getItem('vpos_session')||'null');
@@ -260,18 +268,29 @@ function localUpdate(id,patch){
  const arr=allSessions();const idx=arr.findIndex(s=>s.id===id);if(idx<0)return;
  arr[idx]=Object.assign(arr[idx],patch);saveSessions(arr);loadForMe();
 }
-async function pauseS(id){
- st.err=null;const r=await api('pause-activity',{sessionId:id});
+/** Opens the pause-type picker for a session (Pause button no longer pauses immediately -
+ *  a pause type (Break/Lunch/End of Day) must be selected and logged, per spec). */
+function openPause(id){st.pausingId=id;st.pauseReason='';st.err=null;render();}
+function cancelPause(){st.pausingId=null;render();}
+async function confirmPause(id){
+ if(st.busy||!st.pauseReason)return;
+ st.busy=true;st.err=null;render();
+ const r=await api('pause-activity',{sessionId:id,reason:st.pauseReason});
+ st.busy=false;
  if(handleAuthError(r))return;
  if(!r.ok){st.err=r.error||('Could not pause that task ('+(r.code||'error')+').');render();return;}
- localUpdate(id,{status:'paused',pausedAt:Date.now()});render();
+ st.pausingId=null;
+ localUpdate(id,{status:'paused',pausedAt:Date.now(),pauseType:st.pauseReason});render();
 }
 async function resumeS(id){
+ if(st.busy)return;
  const s=st.sessions.find(x=>x.id===id);st.err=null;
+ st.busy=true;render();
  const r=await api('resume-activity',{sessionId:id});
+ st.busy=false;
  if(handleAuthError(r))return;
  if(!r.ok){st.err=r.error||('Could not resume that task ('+(r.code||'error')+').');render();return;}
- localUpdate(id,{status:'active',pausedAt:null,totalPausedMs:(s.totalPausedMs||0)+(Date.now()-s.pausedAt)});render();
+ localUpdate(id,{status:'active',pausedAt:null,pauseType:'',totalPausedMs:(s.totalPausedMs||0)+(Date.now()-s.pausedAt)});render();
 }
 function openComplete(id){st.completingId=id;st.qty='';st.unit=(st.sessions.find(x=>x.id===id)||{}).unit||'';st.notes='';st.isFinal=false;render();}
 async function confirmComplete(id){
@@ -322,9 +341,10 @@ function renderHome(){
  ${active.length===0?'<p class="sub">No active tasks right now. Scan a bed to start one.</p>':
    active.map(s=>{
     const completing=st.completingId===s.id;
+    const pausing=st.pausingId===s.id;
     return `<div class="card">
     <div class="row" style="margin-bottom:6px;"><div>
-      <span class="badge ${s.status==='paused'?'paused':''}">${s.status.toUpperCase()}</span>
+      <span class="badge ${s.status==='paused'?'paused':''}">${s.status.toUpperCase()}${s.status==='paused'&&s.pauseType?' · '+esc(s.pauseType):''}</span>
       <div style="font-weight:700;margin-top:6px;">${esc(s.bedId)} · ${esc(s.block)}</div>
       <div class="sub">${esc(s.activityName)}</div></div>
       <div class="timer" style="text-align:right;">${fmt(elapsed(s))}</div></div>
@@ -335,10 +355,18 @@ function renderHome(){
       <div class="row">
         <button class="btn secondary" onclick="st.completingId=null;render()">Cancel</button>
         <button class="btn warn" ${st.busy?'disabled':''} onclick="confirmComplete('${s.id}')">${st.busy?'Saving…':'Confirm Complete'}</button>
+      </div>`:pausing?`
+      <label style="margin-top:8px;">Pause type</label>
+      <div class="row" style="flex-wrap:wrap;gap:6px;">
+        ${PAUSE_TYPES.map(t=>`<button class="btn secondary" style="flex:none;${st.pauseReason===t?'font-weight:700;text-decoration:underline;':''}" onclick="st.pauseReason='${t}';render()">${esc(t)}</button>`).join('')}
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn secondary" ${st.busy?'disabled':''} onclick="cancelPause()">Cancel</button>
+        <button class="btn secondary" ${st.busy||!st.pauseReason?'disabled':''} onclick="confirmPause('${s.id}')">${st.busy?'Pausing…':'Confirm Pause'}</button>
       </div>`:`
       <div class="row">
-        ${s.status==='active'?`<button class="btn secondary" onclick="pauseS('${s.id}')">Pause</button>`
-          :`<button class="btn secondary" onclick="resumeS('${s.id}')">Resume</button>`}
+        ${s.status==='active'?`<button class="btn secondary" ${st.busy?'disabled':''} onclick="openPause('${s.id}')">Pause</button>`
+          :`<button class="btn secondary" ${st.busy?'disabled':''} onclick="resumeS('${s.id}')">${st.busy?'Resuming…':'Resume'}</button>`}
         <button class="btn warn" onclick="openComplete('${s.id}')">Complete</button>
       </div>`}
     </div>`;}).join('')}
