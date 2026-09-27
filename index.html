@@ -207,7 +207,12 @@ function mapServerSession_(r){
   startTime:new Date(r.Start_Time).getTime(), totalPausedMs:ps.totalPausedMs, pausedAt:ps.pausedAt,
   // Set only when a manager assigned/reassigned this session (worker self-started
   // tasks have no Manager_ID) - see reassignActivity()/get-my-sessions in the backend.
-  managerName:r.Manager_Name||'', reassignedFromName:r.Reassigned_From_Name||r.Reassigned_From||''
+  managerName:r.Manager_Name||'', reassignedFromName:r.Reassigned_From_Name||r.Reassigned_From||'',
+  // FIX: "My Active Sessions" only ever showed the bare Activity_Name label (e.g.
+  // "Mulching") with nothing explaining what the activity actually is. Server now
+  // joins ACTIVITY_REFERENCE.Description onto get-my-sessions rows the same way it
+  // already did for get-activity-history (see withActivityDescription_ in Code_main.gs).
+  description:r.Description||''
  };
 }
 
@@ -382,6 +387,7 @@ function renderHome(){
       <span class="badge ${s.status==='paused'?'paused':''}">${s.status.toUpperCase()}${s.status==='paused'&&s.pauseType?' · '+esc(s.pauseType):''}</span>
       <div style="font-weight:700;margin-top:6px;">${esc(s.bedId)} · ${esc(s.block)}</div>
       <div class="sub">${esc(s.activityName)}</div>
+      ${s.description?`<div class="sub">${esc(s.description)}</div>`:''}
       ${s.reassignedFromName?`<div class="sub">↩ Reassigned from ${esc(s.reassignedFromName)}${s.managerName?' by '+esc(s.managerName):''}</div>`
         :s.managerName?`<div class="sub">Assigned by ${esc(s.managerName)}</div>`:''}</div>
       <div class="timer" style="text-align:right;">${fmt(elapsed(s))}</div></div>
