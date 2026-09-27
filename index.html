@@ -204,7 +204,10 @@ function mapServerSession_(r){
   // COMPLETED rows drop out of get-my-sessions).
   status: isPaused?'paused':'active',
   pauseType: isPaused?(reasons[reasons.length-1]||''):'',
-  startTime:new Date(r.Start_Time).getTime(), totalPausedMs:ps.totalPausedMs, pausedAt:ps.pausedAt
+  startTime:new Date(r.Start_Time).getTime(), totalPausedMs:ps.totalPausedMs, pausedAt:ps.pausedAt,
+  // Set only when a manager assigned/reassigned this session (worker self-started
+  // tasks have no Manager_ID) - see reassignActivity()/get-my-sessions in the backend.
+  managerName:r.Manager_Name||'', reassignedFromName:r.Reassigned_From_Name||r.Reassigned_From||''
  };
 }
 
@@ -378,7 +381,9 @@ function renderHome(){
     <div class="row" style="margin-bottom:6px;"><div>
       <span class="badge ${s.status==='paused'?'paused':''}">${s.status.toUpperCase()}${s.status==='paused'&&s.pauseType?' · '+esc(s.pauseType):''}</span>
       <div style="font-weight:700;margin-top:6px;">${esc(s.bedId)} · ${esc(s.block)}</div>
-      <div class="sub">${esc(s.activityName)}</div></div>
+      <div class="sub">${esc(s.activityName)}</div>
+      ${s.reassignedFromName?`<div class="sub">↩ Reassigned from ${esc(s.reassignedFromName)}${s.managerName?' by '+esc(s.managerName):''}</div>`
+        :s.managerName?`<div class="sub">Assigned by ${esc(s.managerName)}</div>`:''}</div>
       <div class="timer" style="text-align:right;">${fmt(elapsed(s))}</div></div>
     ${completing?`
       ${s.qtyBased?`<label>Quantity (${esc(s.unit)})</label><input type="number" value="${esc(st.qty)}" oninput="st.qty=this.value">`:''}
