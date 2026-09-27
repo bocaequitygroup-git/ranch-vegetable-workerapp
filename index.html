@@ -154,13 +154,34 @@ if(s.status==='completed')return s.endTime-s.startTime-paused;return Date.now()-
 function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function shortName(n){return(n||'').trim().split(/\s+/)[0]||n;}
 
-/* ================= Local mirror (this device only) =================
-   Sessions actually live in FIELD_LIVE_SESSION / FIELD_ACTIVITY_LOG on the
-   server; there's no "get my sessions" endpoint yet, so this device keeps a
-   local copy of what IT started so the two screens below have something to
-   show and survive a refresh. */
+/* ================= Server-backed sessions, with a local completed-history cache =================
+   FIELD_LIVE_SESSION on the server is the source of truth for ACTIVE/PAUSED sessions -
+   syncActiveSessions_() below calls the 'get-my-sessions' action (ActivityEngine.gs's
+   getLiveSessions({workerId: auth.workerId}), scoped server-side to the logged-in worker,
+   not whatever this device happens to remember) and replaces the active/paused portion of
+   st.sessions with the real thing. This is what makes a session another device started (or
+   one a manager started via ranch_aab / reassigned to this worker) actually show up here.
+   There is no worker-facing "completed history" read on the server yet, so completed rows
+   still come from this device's own localStorage - a task completed on a DIFFERENT device
+   will not show in Completed History here, only its disappearance from Active Sessions
+   (which IS server-truth) will be visible everywhere. */
 function allSessions(){try{return JSON.parse(localStorage.getItem('vpos_sessions')||'[]');}catch(e){return[];}}
 function saveSessions(arr){localStorage.setItem('vpos_sessions',JSON.stringify(arr));}
+function actByName(name){return ACTIVITIES.find(a=>a.name===name);}
+/** Raw FIELD_LIVE_SESSION row (from get-my-sessions) -> the shape renderHome() expects. */
+function mapServerSession_(r){
+ const a=actByName(r.Activity_Name)||{};
+ const rawStatus=String(r.Status||'').toUpperCase();
+ return {
+  id:r.Session_ID, workerId:st.me.workerId, bedId:r.Bed_ID, block:bedBlock(r.Bed_ID),
+  activityId:a.id||'', activityName:r.Activity_Name||'', qtyBased:!!a.qtyBased, unit:a.unit||'',
+  // FIELD_LIVE_SESSION today only ever carries ACTIVE or EXCEPTION (pause/resume are not
+  // wired up server-side - see pauseS/resumeS below) - an EXCEPTION row is still an open
+  // session, so it still renders as 'active' rather than disappearing.
+  status: rawStatus==='PAUSED'?'paused':'active',
+  startTime:new Date(r.Start_Time).getTime(), totalPausedMs:0, pausedAt:null
+ };
+}
 
 let tickTimer=null;
 let st={screen:'login',me:null,token:null,workerIdInput:'',pinInput:'',err:null,busy:false,connected:false,
@@ -171,7 +192,20 @@ try{
  if(sess&&sess.token&&sess.me){st.me=sess.me;st.token=sess.token;st.screen='home';st.connected=true;}
 }catch(e){}
 function loadForMe(){st.sessions=allSessions().filter(s=>s.workerId===st.me.workerId).sort((a,b)=>b.startTime-a.startTime);}
-if(st.me)loadForMe();
+if(st.me)loadForMe(); // instant paint from local cache; syncActiveSessions_() below reconciles with the server
+
+/** Replaces the active/paused portion of st.sessions with server truth; keeps local completed rows. */
+async function syncActiveSessions_(){
+ if(!st.me)return;
+ const r=await api('get-my-sessions',{});
+ if(handleAuthError(r))return;
+ if(!r.ok){st.err=r.error||'Could not refresh your sessions.';render();return;}
+ const serverActive=(r.data||[]).map(mapServerSession_);
+ const localCompleted=allSessions().filter(s=>s.workerId===st.me.workerId&&s.status==='completed');
+ st.sessions=serverActive.concat(localCompleted).sort((a,b)=>b.startTime-a.startTime);
+ render();
+}
+if(st.me)syncActiveSessions_();
 
 function go(screen){st.screen=screen;st.err=null;render();}
 
@@ -187,7 +221,7 @@ async function attemptLogin(){
  st.token=r.data.token;
  localStorage.setItem('vpos_session',JSON.stringify({me:st.me,token:st.token}));
  st.workerIdInput='';st.pinInput='';
- loadForMe();go('home');
+ loadForMe();go('home');syncActiveSessions_();
 }
 function doLogout(callServer){
  if(callServer!==false && st.token) api('logout',{device:(navigator.userAgent||'').slice(0,100)});
@@ -215,7 +249,7 @@ async function confirmStart(){
  arr.push({id:r.data.sessionId,workerId:st.me.workerId,bedId:st.selBed,block:bedBlock(st.selBed),
   activityId:st.selAct.id,activityName:st.selAct.name,qtyBased:st.selAct.qtyBased,unit:st.selAct.unit,
   status:'active',startTime:Date.now(),totalPausedMs:0,pausedAt:null});
- saveSessions(arr);loadForMe();go('home');
+ saveSessions(arr);loadForMe();go('home');syncActiveSessions_();
 }
 async function quickStart(id){
  if(!st.selBed||st.busy)return;
@@ -248,7 +282,7 @@ async function confirmComplete(id){
  if(handleAuthError(r))return;
  if(!r.ok){st.err=r.error||('Could not complete that task ('+(r.code||'error')+').');render();return;}
  localUpdate(id,{status:'completed',endTime:Date.now()});
- st.completingId=null;render();
+ st.completingId=null;render();syncActiveSessions_();
 }
 
 function connPill(){
@@ -282,7 +316,7 @@ function renderHome(){
  const done=st.sessions.filter(s=>s.status==='completed').slice(0,15);
  return `${header()}
  <div class="row" style="margin-bottom:2px;"><h1 style="flex:2;">My Active Sessions</h1>
- <button class="btn secondary" style="flex:1;" onclick="loadForMe();render()">Refresh</button></div>
+ <button class="btn secondary" style="flex:1;" onclick="syncActiveSessions_()">Refresh</button></div>
  <p class="sub" style="margin:0 0 10px;">Logged in as ${esc(st.me.name)} (${esc(shortName(st.me.name))})</p>
  ${errBanner()}
  ${active.length===0?'<p class="sub">No active tasks right now. Scan a bed to start one.</p>':
