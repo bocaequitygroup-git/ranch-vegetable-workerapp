@@ -439,7 +439,7 @@ function renderHome(){
       ${s.description?`<div class="sub">${esc(s.description)}</div>`:''}
       ${s.reassignedFromName?`<div class="sub">↩ Reassigned from ${esc(s.reassignedFromName)}${s.managerName?' by '+esc(s.managerName):''}</div>`
         :s.managerName?`<div class="sub">Assigned by ${esc(s.managerName)}</div>`:''}</div>
-      <div class="timer" style="text-align:right;">${assigned?'Not started':fmt(elapsed(s))}</div></div>
+      <div class="timer" id="timer-${s.id}" style="text-align:right;">${assigned?'Not started':fmt(elapsed(s))}</div></div>
     ${assigned?`
       <div class="row">
         <button class="btn block" ${st.busy?'disabled':''} onclick="confirmStartAssigned('${s.id}','${esc(s.bedId)}','${esc(s.activityName)}')">${st.busy?'Starting…':'Start'}</button>
@@ -536,6 +536,21 @@ function renderAssignment(){
  <p class="link" onclick="go('home')">‹ Back to My Sessions</p>`;
 }
 
+/** FIX: ticking used to call the full render() every second, which rebuilds the
+ *  entire #app innerHTML - including whatever input the worker is mid-typing-into
+ *  (Notes, Quantity, Pause reason...), since those inputs live on this same Home
+ *  screen. Replacing the DOM out from under a focused input resets its cursor/
+ *  selection and can even drop focus entirely - that's the "notes keeps jumping,
+ *  can't type" bug. The clock only needs its own text updated each second, so
+ *  this walks the visible timers by id and patches just their textContent,
+ *  leaving every other element (and whatever's focused) untouched. */
+function updateTimers(){
+ st.sessions.forEach(s=>{
+  if(s.status!=='active'&&s.status!=='paused')return;
+  const elT=document.getElementById('timer-'+s.id);
+  if(elT)elT.textContent=fmt(elapsed(s));
+ });
+}
 function render(){
  const el=document.getElementById('app');
  if(st.screen==='login')el.innerHTML=renderLogin();
@@ -543,7 +558,7 @@ function render(){
  else if(st.screen==='scan')el.innerHTML=renderScan();
  else if(st.screen==='assignment')el.innerHTML=renderAssignment();
  if(tickTimer)clearInterval(tickTimer);
- if(st.screen==='home'&&st.sessions.some(s=>s.status==='active'))tickTimer=setInterval(render,1000);
+ if(st.screen==='home'&&st.sessions.some(s=>s.status==='active'))tickTimer=setInterval(updateTimers,1000);
 }
 render();
 </script>
